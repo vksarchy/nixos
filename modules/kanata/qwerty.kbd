@@ -1,0 +1,49 @@
+;; Variables
+(defvar
+ tap-higher 400
+ tap-time 200
+ hold-time 200
+ chord-time 60
+ subl-time 200
+ tmux-delay 40
+)
+
+(defalias
+  msymb (tap-hold-press $tap-time $hold-time lmet (layer-while-held symbols))
+  mlctl (tap-hold $tap-time $hold-time esc lctl)
+   a (tap-hold $tap-time $hold-time a lctl)
+   r (tap-hold $tap-time $hold-time r lalt)
+   s (tap-hold $tap-time $hold-time s lsft)
+   t (tap-hold $tap-time $hold-time t lmet)
+   n (tap-hold $tap-time $hold-time n lmet)
+   e (tap-hold $tap-time $hold-time e lsft)
+   i (tap-hold $tap-time $hold-time i lalt)
+   o (tap-hold $tap-time $hold-time o lctl)
+)
+
+(defsrc
+  esc    f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
+  grv    1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab    q    w    e    r    t    y    u    i    o    p    [    ]    \
+  caps   a    s    d    f    g    h    j    k    l    ;    '    ret
+  lsft   z    x    c    v    b    n    m    ,    .    /    ▲   rsft
+  lctl  lmet lalt           spc         ralt rctl ◀    ▼    ▶
+ )
+
+(deflayer main
+  esc    f1  f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
+  grv    1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab    q    w    e    r    t    y    u    i    o    p    [    ]    \
+  caps   a    s    d    f    g    h    j    k    l    ;    '    ret
+  lsft   z    x    c    v    b    n    m    ,    .    /    ▲   rsft
+  lctl  lmet lalt          spc         @msymb ralt ◀  ▼    ▶
+)
+
+(deflayer symbols
+  esc    f1  f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
+  grv    1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab    1    2    3    4    5    6    7   C-S-tab  C-tab   ;   -    =    \
+  lctl   [    ]    S-9  S-0    XX     XX  XX  XX  XX  S-;  '    ret
+  lsft   x    c    d    =    z    k    XX    ,    .    /    ▲      rsft
+  lctl  lmet  lalt        spc       rmet     ralt      ◀    ▼    ▶
+)

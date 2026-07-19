@@ -1,0 +1,34 @@
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   '("0325a6b5eea7e5febae709dab35ec8648908af12cf2d2b569bedc8da0a3a81c1"
+     "f1e8339b04aef8f145dd4782d03499d9d716fdc0361319411ac2efc603249326"
+     "014cb63097fc7dbda3edf53eb09802237961cbb4c9e9abd705f23b86511b0a69"
+     "88f7ee5594021c60a4a6a1c275614103de8c1435d6d08cc58882f920e0cec65e"
+     "e57616014f09f5d5351c364a44d8bde5baac6d410cfcff5ab21fb0795abc6e1e"
+     "7e068da4ba88162324d9773ec066d93c447c76e9f4ae711ddd0c5d3863489c52"
+     "7ea883b13485f175d3075c72fceab701b5bf76b2076f024da50dff4107d0db25" default))
+ '(magit-todos-insert-after '(bottom) nil nil "Changed by setter of obsolete option `magit-todos-insert-at'")
+ '(org-agenda-files '("~/org/"))
+ '(pomodoro-break-minutes 5)
+ '(pomodoro-work-minutes 25)
+ '(warning-suppress-types
+   '(((copilot copilot-no-mode-indent)) ((copilot copilot-no-mode-indent))
+     ((copilot copilot-no-mode-indent)) ((copilot copilot-no-mode-indent))
+     ((copilot copilot-no-mode-indent)) (org-roam) (org-roam) (org-roam)
+     (org-element-cache) (org-element-cache) (defvaralias) (org-mode-hook))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(emms-browser-album-face ((t (:foreground "#88C0D0" :height 1.0))))
+ '(emms-browser-artist-face ((t (:foreground "#ECEFF4" :height 1.1))))
+ '(emms-browser-track-face ((t (:foreground "#A3BE8C" :height 1.0))))
+ '(emms-playlist-selected-face ((t (:foreground "#BF616A" :weight bold))))
+ '(emms-playlist-track-face ((t (:foreground "#D8DEE9" :height 1.0)))))
+(put 'narrow-to-region 'disabled nil)
+(put 'upcase-region 'disabled nil)

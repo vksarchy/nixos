@@ -1,0 +1,7 @@
+terra/.terraform.lock.hcl
+terra/.terraform/
+terra/terraform.tfstate
+/result
+
+# Local Claude Code settings — never track
+.claude/settings.local.json

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# webapp — open any URL as a standalone Chromium app window
+# Usage: webapp <name> <url>
+# Example: webapp whatsapp https://web.whatsapp.com
+#
+# Uses a per-app profile dir so each webapp gets its own cookies/sessions/identity.
+# Window rule matching: app-id = "chromium-browser", title = <name>
+
+set -euo pipefail
+
+NAME="$1"
+URL="$2"
+APP_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/webapps/${NAME}"
+
+mkdir -p "$APP_DIR"
+
+exec /run/current-system/sw/bin/chromium \
+  --app="$URL" \
+  --user-data-dir="$APP_DIR" \
+  --enable-features=UseOzonePlatform \
+  --ozone-platform=wayland \
+  --no-first-run \
+  --no-default-browser-check \
+  "$@"

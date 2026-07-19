@@ -1,0 +1,62 @@
+(defsrc
+   q    w    e    r    t       y    u    i    o    p
+   a    s    d    f    g       h    j    k    l    ;
+   z    x    c    v    b       n    m        ,  .   /
+  lsft spc lctl tab bspc ret
+ )
+
+
+(defvar
+  ;; Note: consider using different time values for your different fingers.
+  ;; For example, your pinkies might be slower to release keys and index
+  ;; fingers faster.(Corne)
+  tap-time 200
+  hold-time 200
+  hold-time-slow 300
+)
+
+
+(defalias
+     
+   lnav (layer-toggle nav)
+   lsym (layer-toggle symbols)
+   lnum (layer-toggle num)
+
+   a (tap-hold $tap-time $hold-time a lctl)
+   r (tap-hold $tap-time $hold-time r lalt)
+   s (tap-hold $tap-time $hold-time s lsft)
+   e (tap-hold $tap-time $hold-time e lsft)
+   i (tap-hold $tap-time $hold-time i lalt)
+   o (tap-hold $tap-time $hold-time o lctl)
+   spc (tap-hold $tap-time $hold-time spc @lnum)
+
+)
+
+(deflayer colemak
+    q    w    f    p    b    j    l    u    y  bspc
+    @a   @r   @s  t   g    m   n   e    @i    @o
+    x    c    d    v    z    k    h	  ,    .  esc
+    lalt   @spc  @lnav  lsft  ret   @lsym
+)
+
+(deflayer nav
+  XX    XX    XX   XX     XX   XX    XX    C-S-tab    C-tab  XX
+  A-t    XX    XX  XX   XX   left   down   up    right  XX
+  XX    XX    XX   XX     XX     XX    XX   XX   XX    XX
+  XX    XX    XX   M-tab  lmet   A-tab
+)
+
+(deflayer symbols
+  S-1  S-2  S-3  S-4  S-5  S-6   S-7   S-8     S-9     S-0
+  tab   `      [     ]  S-\  S-'     -     =     +   '
+  /    S-`    S-[   S-]  ;  \    S--   S-;  S-. S-/   
+  A-C-ret A-spc XX  XX  XX  XX
+) 
+
+
+(deflayer num
+  XX   XX    XX    XX    XX     XX     7  8   9     bspc
+  XX   XX    XX    XX    XX     .     4  5   6     0
+  XX   XX    XX    XX    XX     XX     1  2   3     XX
+  XX XX XX XX XX XX
+)

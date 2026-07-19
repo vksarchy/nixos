@@ -1,0 +1,420 @@
+// Laptop Niri Config
+input {
+
+    touchpad {
+        tap
+        natural-scroll
+          accel-speed 0.2
+          accel-profile "adaptive"
+          scroll-method "two-finger"
+          // disabled-on-external-mouse  -- falsely triggered by internal BT HID controller (kernel 7.0.10 regression)
+    }
+
+    trackpoint {
+         accel-speed 0.25
+         accel-profile "adaptive"
+    }
+
+     warp-mouse-to-focus
+     focus-follows-mouse max-scroll-amount="0%"
+}
+
+output "DP-2" {
+    mode "1920x1080@143.981"
+    scale 1
+}
+output "HDMI-A-1" {
+    mode "3840x2160@60.000"
+    scale 1.5
+}
+// /-output "eDP-1" {
+//     // Run `niri msg outputs` while inside a niri instance to list all outputs and their modes.
+//     mode "1920x1200@144.002"
+//
+//     // You can use integer or fractional scale, for example use 1.5 for 150% scale.
+//     scale 1
+// }
+
+layout {
+    background-color "transparent"
+    gaps 12
+    center-focused-column "never"
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+
+    focus-ring {
+        width 1.5
+        active-gradient from="#00E5FF" to="#2979FF" angle=45
+        inactive-gradient from="#0D47A1" to="#1565C0" angle=45 relative-to="workspace-view"
+    }
+
+    shadow {
+        on
+        draw-behind-window true
+        softness 30
+        spread 5
+        offset x=0 y=5
+        color "#1a1b2677"
+    }
+
+    struts {
+        // left 64
+        // right 64
+        // top 64
+        // bottom 64
+    }
+}
+
+spawn-at-startup "noctalia"
+spawn-at-startup "emacsclient" "-c" "-a" ""
+// spawn-at-startup "obsidian"
+spawn-at-startup "ghostty" "-e" "btop"
+spawn-at-startup "systemctl --user start polkit-gnome-authentication-agent-1"
+// swayidle managed via services.swayidle in home/niri.nix (systemd user service with Restart=always)
+// spawn-at-startup "bash" "/home/sid/.config/niri/scripts/smart-auto-hide-bar.sh"
+
+hotkey-overlay {
+     skip-at-startup
+}
+
+prefer-no-csd
+
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+animations {
+}
+
+workspace "1" { }
+workspace "2" { }
+workspace "3" { }
+workspace "4" { }
+
+window-rule {
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"zen$"#
+    draw-border-with-background false
+    geometry-corner-radius 8
+    clip-to-geometry true
+    // open-on-workspace "3"
+    open-maximized true
+    opacity 0.99
+}
+
+window-rule {
+    match app-id="emacs"
+    draw-border-with-background false
+    geometry-corner-radius 3
+    clip-to-geometry true
+    open-on-workspace "2"
+    open-maximized true
+}
+
+window-rule {
+    match app-id="feishin"
+    draw-border-with-background false
+    geometry-corner-radius 8
+    clip-to-geometry true
+    open-on-workspace "4"
+    open-maximized true
+    opacity 0.75
+}
+
+window-rule {
+    match app-id="com.libretro.RetroArch"
+    open-floating true
+    default-column-width { fixed 1200; }
+    default-floating-position x=168 y=96 relative-to="top-left"
+}
+
+// Opacity rule
+window-rule {
+    match app-id="signal"
+    match app-id="codium"
+    match app-id="com.mitchellh.ghostty"
+    match app-id=r#"nemo$"#
+    opacity 0.85
+    draw-border-with-background false
+}
+
+window-rule {
+    match app-id=r#"^org\.keepassxc\.KeePassXC$"#
+    match app-id=r#"^org\.gnome\.World\.Secrets$"#
+    block-out-from "screen-capture"
+}
+
+window-rule {
+    geometry-corner-radius 12
+    clip-to-geometry true
+}
+
+window-rule {
+    match app-id=r#"nemo$"#
+    default-column-width { fixed 1000; }
+    default-window-height { fixed 900; }
+    open-floating true
+    default-floating-position x=0 y=14.5 relative-to="top"
+}
+
+window-rule {
+    match app-id="org.jellyfin.JellyfinDesktop"
+    draw-border-with-background false
+    open-maximized true
+}
+
+// Chromium webapp windows — make them look like native apps
+window-rule {
+    match app-id="chromium-browser" title=r#"^(WhatsApp|YouTube)$"#
+    draw-border-with-background false
+    geometry-corner-radius 8
+    clip-to-geometry true
+    open-maximized true
+}
+
+window-rule {
+    // catch-all: any other chromium --app window gets clean look
+    match app-id="chromium-browser"
+    draw-border-with-background false
+    geometry-corner-radius 8
+    clip-to-geometry true
+}
+
+binds {
+
+    Mod+Shift+Slash { show-hotkey-overlay; }
+
+    Alt+Ctrl+Return hotkey-overlay-title="Open a Terminal: ghostty" { spawn "ghostty"; }
+    Alt+Space hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
+    Alt+L hotkey-overlay-title="Lock the Screen: noctalia" { spawn-sh "noctalia msg session lock"; }
+
+    Alt+K { spawn-sh "echo -e 'cheapino\\ncolemak\\ncorne\\nqwerty' | fuzzel --dmenu --prompt 'layout: ' | xargs -r pkexec kanata-switch"; }
+
+    // Mod+X { spawn "codium"; }
+    // Mod+S { spawn "/run/current-system/sw/bin/signal-desktop"; }
+    // Mod+Shift+J { spawn-sh "/run/current-system/sw/bin/jellyfin-desktop"; }
+    Mod+N { spawn-sh "ghostty -e nvim"; }
+    Alt+D hotkey-overlay-title="Emacs frame" { spawn-sh "emacsclient -c -a ''"; }
+    // Mod+M { spawn "/run/current-system/sw/bin/feishin"; }
+       Mod+Space { spawn-sh "noctalia msg settings-toggle"; }
+    Mod+Shift+B { spawn-sh "ghostty -e btop"; }
+    Alt+W {spawn "/home/sid/.local/bin/webapp" "whatsapp" "https://web.whatsapp.com";}
+    Alt+C {spawn "/home/sid/.local/bin/webapp" "calendar" "https://calendar.google.com/calendar/u/0/r";}
+    Alt+H {spawn "/home/sid/.local/bin/webapp" "maps" "https://www.google.com/maps/@13.0587952,80.2349081,17z?entry=ttu&g_ep=EgoyMDI2MDYyNC4wIKXMDSoASAFQAw%3D%3D";}
+    Alt+Y {spawn "/home/sid/.local/bin/webapp" "Youtube-Music" "https://music.youtube.com/";}
+    Ctrl+Alt+P {spawn "/home/sid/.local/bin/webapp" "Google Photos" "https://photos.google.com/";}
+    Alt+U { spawn-sh "ghostty -e yazi"; }
+    Alt+T { spawn "stt-record"; }
+
+    // Noctalia Media Controls
+    Ctrl+Alt+Space { spawn-sh "noctalia msg media toggle"; }
+    // Ctrl+Alt+Left { spawn-sh "noctalia msg media previous"; }
+    // Ctrl+Alt+Right { spawn-sh "noctalia msg media next"; }
+    // Mod+Shift+M { spawn-sh "noctalia msg plugin --help"; } # mediaMini plugin removed in v5.0.0
+
+
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"; }
+    XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
+
+    XF86MonBrightnessUp allow-when-locked=true { spawn-sh "noctalia msg brightness-up"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn-sh "noctalia msg brightness-down"; }
+
+    Alt+O repeat=false { toggle-overview; }
+
+    Alt+Q repeat=false { close-window; }
+
+    Alt+Left  { focus-column-left; }
+    Alt+Down  { focus-window-down; }
+    Alt+Up    { focus-window-up; }
+    Alt+Right { focus-column-right; }
+    // Mod+H     { focus-column-left; }
+    // Mod+J     { focus-window-down; }
+    // Mod+K     { focus-window-up; }
+    // Mod+L     { focus-column-right; }
+
+    Alt+N     { focus-column-left; }
+    Alt+E     { focus-column-right; }
+
+    Alt+Ctrl+Left  { move-column-left; }
+    Alt+Ctrl+Down  { move-window-down; }
+    Alt+Ctrl+Up    { move-window-up; }
+    Alt+Ctrl+Right { move-column-right; }
+    // Mod+Ctrl+H     { move-column-left; }
+    // Mod+Ctrl+J     { move-window-down; }
+    // Mod+Ctrl+K     { move-window-up; }
+    // Mod+Ctrl+L     { move-column-right; }
+
+    Alt+Ctrl+N     { move-column-left; }
+    Alt+Ctrl+I     { move-window-down; }
+    Alt+Ctrl+M     { move-window-up; }
+    Alt+Ctrl+E     { move-column-right; }
+
+    Mod+Home { focus-column-first; }
+    Mod+End  { focus-column-last; }
+    Mod+Shift+Home { move-column-to-first; }
+    Mod+Shift+End  { move-column-to-last; }
+
+
+    Mod+Ctrl+Shift+Page_Down { move-column-to-workspace-down; }
+    Mod+Ctrl+Shift+Page_Up   { move-column-to-workspace-up; }
+    Mod+Ctrl+Shift+U         { move-column-to-workspace-down; }
+    Mod+Ctrl+Shift+I         { move-column-to-workspace-up; }
+
+    // Workspace movement
+    Alt+Shift+Page_Down { move-workspace-down; }
+    Alt+Shift+Page_Up   { move-workspace-up; }
+    // Mod+Shift+U         { move-workspace-down; }
+    // Mod+Shift+I         { move-workspace-up; }
+
+    Alt+Shift+I         { move-workspace-down; }
+    Alt+Shift+M         { move-workspace-up; }
+
+    Alt+Page_Down      { focus-workspace-down; }
+    Alt+Page_Up        { focus-workspace-up; }
+    // Mod+U              { focus-workspace-down; }
+    // Mod+I              { focus-workspace-up; }
+
+    Alt+I              { focus-workspace-down; }
+    Alt+M              { focus-workspace-up; }
+
+    Mod+WheelScrollDown      cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp        cooldown-ms=150 { focus-workspace-up; }
+    Mod+Shift+WheelScrollDown cooldown-ms=150 { move-column-to-workspace-down; }
+    Mod+Shift+WheelScrollUp   cooldown-ms=150 { move-column-to-workspace-up; }
+
+    Mod+WheelScrollRight      { focus-column-right; }
+    Mod+WheelScrollLeft       { focus-column-left; }
+    Mod+Shift+WheelScrollRight { move-column-right; }
+    Mod+Shift+WheelScrollLeft  { move-column-left; }
+
+    // Touchpad 2-finger swipe
+    Mod+TouchpadScrollDown cooldown-ms=350 { focus-workspace-down; }
+    Mod+TouchpadScrollUp   cooldown-ms=350 { focus-workspace-up; }
+    Mod+TouchpadScrollRight cooldown-ms=250 { focus-column-right; }
+    Mod+TouchpadScrollLeft  cooldown-ms=250 { focus-column-left; }
+
+    Alt+1 { focus-workspace 1; }
+    Alt+2 { focus-workspace 2; }
+    Alt+3 { focus-workspace 3; }
+    Alt+4 { focus-workspace 4; }
+    Alt+5 { focus-workspace 5; }
+    Alt+6 { focus-workspace 6; }
+    Alt+7 { focus-workspace 7; }
+    Alt+8 { focus-workspace 8; }
+    Alt+9 { focus-workspace 9; }
+    Alt+Shift+1 { move-column-to-workspace 1; }
+    Alt+Shift+2 { move-column-to-workspace 2; }
+    Alt+Shift+3 { move-column-to-workspace 3; }
+    Alt+Shift+4 { move-column-to-workspace 4; }
+    Alt+Shift+5 { move-column-to-workspace 5; }
+    Alt+Shift+6 { move-column-to-workspace 6; }
+    Alt+Shift+7 { move-column-to-workspace 7; }
+    Alt+Shift+8 { move-column-to-workspace 8; }
+    Alt+Shift+9 { move-column-to-workspace 9; }
+
+
+    // Toggle focus between TV (HDMI-A-1) and previous monitor
+    Mod+Tab { spawn-sh "toggle-monitor-tv"; }
+
+    // Toggle audio output between TV and laptop speakers
+    Alt+Shift+T { spawn-sh "python3 /home/sid/.local/bin/toggle-audio-sink"; }
+
+    // Switches focus between the current and the previous workspace.
+    // Mod+Tab { focus-workspace-previous; }
+
+    // The following binds move the focused window in and out of a column.
+    // If the window is alone, they will consume it into the nearby column to the side.
+    // If the window is already in a column, they will expel it out.
+    Mod+BracketLeft  { consume-or-expel-window-left; }
+    Mod+BracketRight { consume-or-expel-window-right; }
+
+    // Consume one window from the right to the bottom of the focused column.
+    Mod+Comma  { consume-window-into-column; }
+    // Expel the bottom window from the focused column to the right.
+    Mod+Period { expel-window-from-column; }
+
+    Mod+R { switch-preset-column-width; }
+    // Cycling through the presets in reverse order is also possible.
+    // Mod+R { switch-preset-column-width-back; }
+
+    // SPLIT duplicate Mod+Shift+R into Shift vs Ctrl
+    Mod+Shift+R { switch-preset-window-height; }
+    Mod+Ctrl+R  { reset-window-height; }
+
+    Alt+F       { maximize-column; }
+
+    // SPLIT duplicate Mod+Shift+F into Shift vs Ctrl
+    Alt+Shift+F { fullscreen-window; }
+    // Makes the column "fill the rest of the space".
+    Mod+Ctrl+F  { expand-column-to-available-width; }
+
+    Mod+C { center-column; }
+
+    // Center all fully visible columns on screen.
+    Mod+Shift+C { center-visible-columns; }
+
+    // Finer width adjustments.
+    Mod+Minus { set-column-width "-10%"; }
+    Mod+Equal { set-column-width "+10%"; }
+
+    // Finer height adjustments when in column with other windows.
+    Mod+Shift+Minus { set-window-height "-10%"; }
+    Mod+Shift+Equal { set-window-height "+10%"; }
+
+    // Move the focused window between the floating and the tiling layout.
+    Mod+V       { toggle-window-floating; }
+    Mod+Shift+V { switch-focus-between-floating-and-tiling; }
+
+    // Toggle tabbed column display mode.
+    // Windows in this column will appear as vertical tabs,
+    // rather than stacked on top of each other.
+    Mod+W { toggle-column-tabbed-display; }
+    Print      { screenshot; }
+    Mod+S      { screenshot; }
+    Alt+Shift+S      { screenshot; }
+    Shift+Print { screenshot-screen; }
+    Mod+Shift+S { screenshot-window; }
+
+    Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
+
+    // The quit action will show a confirmation dialog to avoid accidental exits.
+    Mod+Shift+E { quit; }
+    Shift+Alt+Delete { quit; }
+
+    // Powers off the monitors. To turn them back on, do any input like
+    // moving the mouse or pressing any other key.
+    Mod+Shift+P { power-off-monitors; }
+}
+
+cursor {
+    xcursor-theme "BreezeX-RosePine-Linux"
+    xcursor-size 24
+    hide-when-typing
+    hide-after-inactive-ms 10000
+}
+
+layer-rule {
+    match namespace="^noctalia-wallpaper-eDP-1"
+    place-within-backdrop true
+}
+
+overview {
+    workspace-shadow {
+        off
+    }
+}
+
+gestures {
+    hot-corners {
+        off
+    }
+}
+
+include "./noctalia.kdl"

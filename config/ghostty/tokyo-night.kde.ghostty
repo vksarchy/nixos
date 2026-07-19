@@ -1,0 +1,44 @@
+background-opacity = .95
+
+font-size = 14
+window-decoration = true
+#cursor-style = underline
+mouse-hide-while-typing = true
+window-save-state = always
+adjust-cell-height = 10%
+#maximize = true
+
+### keybinds ###
+keybind = ctrl+alt+a=new_tab
+keybind = ctrl+alt+z=close_tab:this
+keybind = ctrl+shift+s=new_split:right
+keybind = ctrl+shift+d=new_split:down
+keybind = ctrl+shift+q=close_surface
+keybind = ctrl+shift+arrow_right=goto_split:next
+keybind = ctrl+shift+arrow_left=goto_split:previous
+keybind = ctrl+shift+r=reset
+keybind = ctrl+shift+c=copy_to_clipboard
+
+# Theme
+palette = 0=#15161e
+palette = 1=#f7768e
+palette = 2=#9ece6a
+palette = 3=#e0af68
+palette = 4=#7aa2f7
+palette = 5=#bb9af7
+palette = 6=#7dcfff
+palette = 7=#a9b1d6
+palette = 8=#414868
+palette = 9=#f7768e
+palette = 10=#9ece6a
+palette = 11=#e0af68
+palette = 12=#7aa2f7
+palette = 13=#bb9af7
+palette = 14=#7dcfff
+palette = 15=#c0caf5
+background = #1a1b26
+foreground = #c0caf5
+cursor-color = #c0caf5
+cursor-text = #1a1b26
+selection-background = #283457
+selection-foreground = #c0caf5

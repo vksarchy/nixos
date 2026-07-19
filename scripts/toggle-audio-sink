@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+"""Toggle audio output between TV (HDMI2) and Laptop Speakers."""
+import subprocess
+import re
+
+TV_SINK = "alsa_output.pci-0000_04_00.1.HiFi__HDMI2__sink"
+SPEAKER_SINK = "alsa_output.pci-0000_04_00.6.HiFi__Speaker__sink"
+
+# Which sink is currently default?
+r = subprocess.run(["wpctl", "inspect", "@DEFAULT_AUDIO_SINK@"], capture_output=True, text=True)
+m = re.search(r'node\.name\s*=\s*"([^"]+)"', r.stdout)
+current = m.group(1) if m else SPEAKER_SINK
+
+target = SPEAKER_SINK if current == TV_SINK else TV_SINK
+label = "Laptop Speakers" if target == SPEAKER_SINK else "TV"
+
+# Find all output audio streams and their current sink links
+r = subprocess.run(["pw-link", "-l"], capture_output=True, text=True)
+streams = set()
+for src, dst in re.findall(r"(\S+:output_F[LR])\s*\n\s*\|->\s*(\S+)", r.stdout):
+    stream_name = src.split(":")[0]
+    side = "FL" if "_FL" in src else "FR"
+    subprocess.run(["pw-link", "-d", src, dst], capture_output=True)
+    streams.add(stream_name)
+
+for name in streams:
+    for side in ("FL", "FR"):
+        subprocess.run(["pw-link", f"{name}:output_{side}", f"{target}:playback_{side}"], capture_output=True)
+
+# Find wpctl ID for the target sink by inspecting all sinks
+r = subprocess.run(["wpctl", "status"], capture_output=True, text=True)
+sink_ids = re.findall(r"^[ │*]*(\d+)\.", r.stdout, re.MULTILINE)
+for sid in sink_ids:
+    ri = subprocess.run(["wpctl", "inspect", sid], capture_output=True, text=True)
+    if f'node.name = "{target}"' in ri.stdout:
+        subprocess.run(["wpctl", "set-default", sid], capture_output=True)
+        break
+
+subprocess.run(["notify-send", "Audio", label, "-t", "2000"], capture_output=True)

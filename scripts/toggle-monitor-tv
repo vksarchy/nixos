@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Toggle monitor focus between TV (HDMI-A-1) and the previous monitor
+if niri msg focused-output 2>/dev/null | grep -q 'HDMI-A-1'; then
+    niri msg action focus-monitor-previous
+else
+    niri msg action focus-monitor "HDMI-A-1"
+fi
