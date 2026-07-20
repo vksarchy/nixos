@@ -42,6 +42,11 @@
 
     # ── Age secrets ──
     age.secrets.surfshark-key.file = ../../../secrets/surfshark-key.age;
+    age.secrets.anthropic-key = {
+      file = ../../../secrets/anthropic-key.age;
+      owner = "sid";
+      mode = "0400";
+    };
 
     # ── Extra system packages ──
     environment.systemPackages = with pkgs; [

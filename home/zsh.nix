@@ -68,6 +68,12 @@
         # Ctrl-R: history with preview (for multi-line commands)
         export FZF_CTRL_R_OPTS="--preview 'echo {}' --preview-window 'down,3,hidden'"
       '')
+      (lib.mkOrder 900 ''
+        # Anthropic API key: decrypted by agenix at boot, never in this repo
+        if [ -r /run/agenix/anthropic-key ]; then
+          export ANTHROPIC_API_KEY="$(< /run/agenix/anthropic-key)"
+        fi
+      '')
       (lib.mkOrder 1000 ''
         export EZA_CONFIG_DIR="$HOME/.config/eza"
         export EZA_ICONS_AUTO=1

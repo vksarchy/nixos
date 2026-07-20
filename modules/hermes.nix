@@ -42,7 +42,14 @@ in
       enable = true;
       addToSystemPackages = cfg.addToCli;
       settings.model.default = cfg.model;
-      settings.custom_providers = lib.mkIf (cfg.customProviders != []) cfg.customProviders;
+      # Explicit provider, not inferred from the "vendor/model" string.
+      # Without this, resolve_provider("auto") falls through to scanning
+      # PROVIDER_REGISTRY alphabetically for a usable *_API_KEY env var —
+      # anthropic sorts before deepseek, so an ANTHROPIC_API_KEY exported
+      # into the shell (home/zsh.nix, agenix secret) silently wins over the
+      # deepseek-prefixed model name and DEEPSEEK_API_KEY.
+      settings.model.provider = builtins.elemAt (lib.splitString "/" cfg.model) 0;
+      settings.custom_providers = cfg.customProviders;
 
       # Run as the interactive user so it can access ~/Obsidian, ~/vimwiki, etc.
       user = "sid";
@@ -50,7 +57,7 @@ in
       createUser = false;
 
       # Include messaging deps for Discord support
-      extraDependencyGroups = [ "messaging" ];
+      extraDependencyGroups = [ "messaging" "anthropic" ];
 
       container.enable = cfg.container;
       container.hostUsers = lib.optionals cfg.container [ "sid" ];

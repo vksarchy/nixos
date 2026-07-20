@@ -61,7 +61,7 @@
       };
 
       surfshark = {
-        enable = true;
+        enable = false;
         privateKeyFile = config.age.secrets.surfshark-key.path;
         endpoint = "us-buf.prod.surfshark.com:51820";
         serverPublicKey = "156ry2sOmv+I9KYTy2jR4/BLTnPT+Qn+DoCNqOon1ys=";
@@ -93,6 +93,11 @@
 
     # ── Age secrets ──
     age.secrets.surfshark-key.file = ../../../secrets/surfshark-key.age;
+    age.secrets.anthropic-key = {
+      file = ../../../secrets/anthropic-key.age;
+      owner = "sid";
+      mode = "0400";
+    };
 
     # ThinkPad-specific: Turn off micmute LED at boot
     systemd.services.micmute-led-off = {
