@@ -98,6 +98,11 @@
       owner = "sid";
       mode = "0400";
     };
+    age.secrets.deepseek-key = {
+      file = ../../../secrets/deepseek-key.age;
+      owner = "sid";
+      mode = "0400";
+    };
 
     # ThinkPad-specific: Turn off micmute LED at boot
     systemd.services.micmute-led-off = {

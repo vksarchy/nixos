@@ -21,4 +21,5 @@ in
   "borg.prometheus.age".publicKeys = allHosts ++ [ myUser ];
   "borg.borgbase.age".publicKeys = allHosts ++ [ myUser ];
   "anthropic-key.age".publicKeys = allHosts ++ [ myUser ];
+  "deepseek-key.age".publicKeys = allHosts ++ [ myUser ];
 }

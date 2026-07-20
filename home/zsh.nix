@@ -73,6 +73,11 @@
         if [ -r /run/agenix/anthropic-key ]; then
           export ANTHROPIC_API_KEY="$(< /run/agenix/anthropic-key)"
         fi
+        # DeepSeek key for howcopy: point at the agenix-decrypted file rather
+        # than exporting the raw value, so it never sits in `env` output.
+        if [ -r /run/agenix/deepseek-key ]; then
+          export HOWCOPY_DEEPSEEK_API_KEY_FILE=/run/agenix/deepseek-key
+        fi
       '')
       (lib.mkOrder 1000 ''
         export EZA_CONFIG_DIR="$HOME/.config/eza"
