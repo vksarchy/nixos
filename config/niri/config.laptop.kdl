@@ -197,7 +197,7 @@ binds {
 
     // Mod+X { spawn "codium"; }
     // Mod+S { spawn "/run/current-system/sw/bin/signal-desktop"; }
-    // Mod+Shift+J { spawn-sh "/run/current-system/sw/bin/jellyfin-desktop"; }
+    Alt+B { spawn-sh "/run/current-system/sw/bin/calibre"; }
     Mod+N { spawn-sh "ghostty -e nvim"; }
     Alt+D hotkey-overlay-title="Emacs frame" { spawn-sh "emacsclient -c -a ''"; }
     // Mod+M { spawn "/run/current-system/sw/bin/feishin"; }

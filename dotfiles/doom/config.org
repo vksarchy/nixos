@@ -541,31 +541,6 @@ We set the visual line wrapping and relative line numbers (then we can just go u
 
 ** Org Capture Templates
 #+begin_src elisp
-;; (defun org-capture-bookmark-tags ()
-;;   (save-window-excursion
-;;     (let ((tags-list '()))
-;;       (with-current-buffer (find-file-noselect "~/org/bookmarks.org")
-;;         (save-excursion
-;;           (goto-char (point-min))
-;;           (while (re-search-forward "^:TAGS:\\s-*\\(.+\\)$" nil t)
-;;             (dolist (tag (split-string (match-string 1) "[,;]" t "[[:space:]]"))
-;;               (push (string-trim tag) tags-list)))))
-;;       (mapconcat 'identity
-;;                  (completing-read-multiple "Tags: "
-;;                    (sort (delete-dups tags-list) 'string<))
-;;                  ", "))))
-
-;; (defun org-capture-ref-link (file)
-;;   (let* ((headlines (org-map-entries
-;;                      (lambda ()
-;;                        (cons (org-get-heading t t t t)
-;;                              (org-id-get-create)))
-;;                      nil
-;;                      (list file)))
-;;          (contact (completing-read "Contact: " (mapcar #'car headlines)))
-;;          (id (cdr (assoc contact headlines))))
-;;     (format "[[id:%s][%s]]" id contact)))
-
 (after! org
   (setq org-log-done 'time)
   (setq kappini-base-dir  "~/Projects/Kappini_Realty/")
@@ -596,22 +571,15 @@ We set the visual line wrapping and relative line numbers (then we can just go u
            "* %? :idea:\n%U\n")
           ("t" "Todo" entry
            (file+headline "~/org/todo.org" "TASK")
-           "* TODO %^{Task}\n:PROPERTIES:\n:CREATED: %U\n:CAPTURED: %a\n:END:\n\nContext: %?\n")
+           "* TODO %^{Task}\n:PROPERTIES:\n:CREATED: %U\n:END:\n\nContext: %?\n")
           ("d" "Deadline" entry
            (file+headline "~/org/calendar.org" "Deadlines")
-           "* TODO %^{Task}\nDEADLINE: %^{Deadline}t\n:PROPERTIES:\n:CREATED: %U\n:CAPTURED: %a\n:END:\n%?"
+           "* TODO %^{Task}\nDEADLINE: %^{Deadline}t\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?"
            :empty-lines 1)
           ("k" "Contact" entry
            (file "~/org/roam/contacts.org")
            "* %^{Name} %^g\n:PROPERTIES:\n:ID: %(org-id-new)\n:CREATED: %U\n:CAPTURED: %a\n:EMAIL: %^{Email}\n:PHONE: %^{Phone}\n:BIRTHDAY: %^{Birthday}t\n:LOCATION: %^{Address}\n:LAST_CONTACTED: %U\n:END:\n%?"
            :empty-lines 1))))  ; ← closes `(...) and (after! org
-
-(map! :leader
-      :desc "Org Capture" "X" #'org-capture)
-
-(map! :leader
-      (:prefix ("C" . "commander")
-       :desc "Commander Protocol capture" "c" (cmd! (org-capture nil "c"))))
 
 #+end_src
 
@@ -705,6 +673,22 @@ We set the visual line wrapping and relative line numbers (then we can just go u
 #+end_src
 
 ** Org Roam
+
+Fast capture is all under =SPC H= (one menu). Do not use =SPC n a=
+(=org-agenda=) or =SPC n r n= (slow template picker).
+
+| Keys | What |
+|------+------|
+| =SPC H l= | HRR lead |
+| =SPC H p= | HRR property |
+| =SPC H d= | HRR deal |
+| =SPC H a= | Hate entry |
+| =SPC H f= | Find node |
+| =SPC H i= | Insert link |
+
+Capture flow: key → type title → write free text → =C-c C-c=.
+Fill drawers/fields later in the file.
+
 #+begin_src elisp
 (use-package! org-roam
   :defer t
@@ -719,98 +703,56 @@ We set the visual line wrapping and relative line numbers (then we can just go u
         org-roam-database-connector 'sqlite-builtin
         org-roam-db-location (expand-file-name "org-roam.db" org-roam-directory)
         org-roam-v2-ack t)
-
   :config
   (unless (file-exists-p org-roam-directory)
     (make-directory org-roam-directory t))
-
   (org-roam-db-autosync-mode 1)
+  (setq org-roam-completion-everywhere t)
 
-  ;; ============================================================
-  ;; ORG ROAM TEMPLATES
-  ;; ============================================================
+  ;; Templates: title + free text only (%^{...} prompts removed).
   (setq org-roam-capture-templates
-        '(
-          ;; ============================================
-          ;; ZETTELKASTEN (Timestamped)
-          ;; ============================================
-        
-          ;; ("f" "Fleeting Note" plain
-          ;;  "%?\n\n* Up\n- \n\n* Down\n- \n"
-          ;;  :if-new (file+head "fleeting/%<%Y%m%d%H%M%S>.org"
-          ;;                     "#+title: ${title}\n#+date: %U\n#+filetags: :fleeting:\n\n")
-          ;;  :unnarrowed t)
-
-          ;; ("l" "Literature Note" plain
-          ;;  "* Summary\n\n%?\n\n* Key Ideas\n- \n\n* Quotes\n\n* References\n"
-          ;;  :if-new (file+head "literature/%<%Y%m%d%H%M%S>.org"
-          ;;                     "#+title: ${title}\n#+date: %U\n#+filetags: :literature:\n#+source: %^{Source URL or Book}\n#+author: %^{Author}\n\n")
-          ;;  :unnarrowed t)
-
-          ;; ============================================
-          ;; PEOPLE & NOTES
-          ;; ============================================
-            ("n" "Note" plain
-            "* Core Idea\n\n%?\n\n* Connections\n- \n\n* Source\n"
-            :if-new (file+head "notes/%<%Y%m%d%H%M%S>.org"
-                                "#+title: ${title}\n#+date: %U\n#+filetags: :%^{Tag|media|literature|fleeting|mindset|history|academic}:\n\n")
-            :unnarrowed t)
-
-            ("p" "Person" plain
-            "* Who\n\n%?\n\n* Key Ideas\n- \n\n* Works\n- \n"
-            :if-new (file+head "people/${title}.org"
-                                "#+title: ${title}\n#+date: %U\n#+filetags: :person:\n\n")
-            :unnarrowed t)
-            
-
-          ;; ============================================
-          ;; PROJECTS & WORK
-          ;; ============================================
-
+        '(;; --- personal ---
+          ("n" "Note" plain
+           "* Core Idea\n\n%?\n\n* Connections\n- \n\n* Source\n"
+           :if-new (file+head "notes/%<%Y%m%d%H%M%S>.org"
+                              "#+title: ${title}\n#+date: %U\n#+filetags: :note:\n\n")
+           :unnarrowed t)
+          ("p" "Person" plain
+           "* Who\n\n%?\n\n* Key Ideas\n- \n\n* Works\n- \n"
+           :if-new (file+head "people/${title}.org"
+                              "#+title: ${title}\n#+date: %U\n#+filetags: :person:\n\n")
+           :unnarrowed t)
           ("w" "Writing" plain
            "%?"
            :if-new (file+head "writing/${title}.org"
                               "#+title: ${title}\n#+date: %U\n#+filetags: :writing:draft:\n\n")
            :unnarrowed t)
-
-          ;; ============================================
-          ;; KAPPINI — REALTY
-          ;; ============================================
-
-          ("m" "Client/Property Profile" plain
-           "* Overview\n\n%?\n\n* Details\n\n* History/Timeline\n\n* Current Status\n\n* Key Documents\n\n* Notes\n"
-           :if-new (file+head "client/${title}.org"
-                              "#+title: ${title}\n#+date: %U\n#+filetags: :profile:\n#+type: %^{Type|Property|Buyer|Seller|College|Vendor|Partner}\n#+business: %^{Business|Kappini|InLingua|Coworking}\n#+status: active\n\n")
-           :unnarrowed t)
           
-          ("d" "Design Quote (Simple)" plain
-           "* Client Requirements\n\n%?\n\n* Scope of Work\n- [ ] \n\n* Changes/Modifications\n\n** Items & Estimates\n\n| Item/Service | Description | Qty | Unit Cost | Total Cost | Notes |\n|--------------|-------------|-----|-----------|------------|-------|\n|              |             |     |           |            |       |\n#+TBLFM: $5=$3*$4\n\n** Summary\n| Category | Amount |\n|----------|--------|\n| Subtotal |        |\n| GST 18%  |        |\n| Total    |        |\n\n* Budget Discussion\n\n* Timeline\n\n* Next Steps\n- [ ] \n"
-           :if-new (file+head "design/${title}.org"
-                              "#+title: ${title}\n#+date: %U\n#+filetags: :quote:design:\n#+business: Kappini\n\n")
+          ;; --- hate (timestamp-only filename: title stays private on disk) ---
+          ("a" "Hate entry" plain
+           "*Target*: ${title}\n\n*Precise Description*:\n%?\n\n*Root Cause Analysis*:\n\n\n*Fuel Extraction*:\n\n\n*Action Plan*:\n- \n\n*Notes*:\n"
+           :if-new (file+head "hate/%<%Y%m%d%H%M%S>.org"
+                              "#+title: Hate: ${title}\n#+date: %U\n#+filetags: :hate:\n#+intensity:\n\n")
            :unnarrowed t)
-
-          ;; ("w" "Deep Design Quote" plain
-          ;;  "* Project Overview\n:PROPERTIES:\n:CLIENT: %^{Client Name}\n:LOCATION: %^{Location}\n:PROPERTY_TYPE: %^{Type|Residential|Commercial|Mixed}\n:PROJECT_START: %^{Start Date|%<%Y-%m-%d>}\n:PROJECT_END: %^{Target Completion|%<%Y-%m-%d>}\n:BUDGET_RANGE: %^{Budget Range}\n:STATUS: Draft\n:END:\n\n%?\n\n* Client Requirements\n** Primary Goals\n- \n\n** Must-Haves\n- \n\n* Scope of Work\n- [ ] \n\n* Items & Cost Breakdown\n** Labor Estimates\n| Category | Worker Type | Days | Rate/Day | Subtotal | Notes |\n|----------+-------------+------+----------+----------+-------|\n|          |             |      |          |          |       |\n|----------+-------------+------+----------+----------+-------|\n| LABOR TOTAL |         |      |          |          |       |\n#+TBLFM: $5=$3*$4::@>$5=vsum(@2..@-1)\n\n** Materials Estimate\n| Item | Specification | Qty | Unit | Rate | Subtotal | Vendor |\n|------+---------------+-----+------+------+----------+--------|\n|      |               |     |      |      |          |        |\n|------+---------------+-----+------+------+----------+--------|\n| MATERIALS TOTAL |     |     |      |      |          |        |\n#+TBLFM: $6=$3*$5::@>$6=vsum(@2..@-1)\n\n** Project Summary\n| Category | Amount | % of Total |\n|----------+--------+------------|\n| Labor    |        |            |\n| Materials |       |            |\n|----------+--------+------------|\n| Subtotal |        |            |\n| GST 18%  |        |            |\n|----------+--------+------------|\n| *TOTAL*  |        |            |\n#+TBLFM: @>$2=vsum(@2..@-2)::$3=100*$2/@>$2;%.1f\n\n* Budget Analysis\n** Client Budget: ₹\n** Our Quote: ₹\n** Variance: \n\n* Timeline & Milestones\n| Phase | Task | Start Date | End Date | Status |\n|-------+------+------------+----------+--------|\n|       |      |            |          |        |\n\n* Vendor Contacts\n| Role | Name | Phone | Notes |\n|------+------+-------+-------|\n|      |      |       |       |\n\n* Payment Schedule\n| Milestone | % | Amount | Date | Status |\n|-----------+---+--------+------+--------|\n| Advance   |   |        |      |        |\n\n* Meeting Notes\n** Initial Consultation\n\n* Next Steps\n- [ ] \n"
-          ;;  :if-new (file+head "quotes/${slug}.org"
-          ;;                     "#+title: ${title}\n#+date: %U\n#+filetags: :quote:design:\n#+business: Kappini\n\n")
-          ;;  :unnarrowed t)
-
-          ;; ============================================
-          ;; INLINGUA
-          ;; ============================================
-
-          ("c" "inlingua College Meeting" plain
-           "* College Information\n:PROPERTIES:\n:COLLEGE: %^{College Name}\n:DEPARTMENT: %^{Department}\n:CONTACT_PERSON: %^{Contact Person}\n:PHONE: %^{Phone}\n:EMAIL: %^{Email}\n:END:\n\n%?\n\n* Meeting Purpose\n%^{Purpose|Initial Contact|Follow-up|Course Discussion|Contract Negotiation}\n\n* Student Details\n** Expected Enrollment: %^{Number of Students}\n** Course Interest: %^{Course|German|French|Spanish|Japanese|IELTS|TOEFL}\n** Level: %^{Level|Beginner|Intermediate|Advanced}\n** Batch Start Date: %^{Start Date|%<%Y-%m-%d>}\n\n* Requirements from College\n- [ ] \n\n* Our Offer\n** Pricing\n| Tier | Students | Price/Student | Total |\n|------+----------+---------------+-------|\n|      |          |               |       |\n\n** Tentative Schedule\n| Day | Time | Duration | Room |\n|-----+------+----------+------|\n|     |      |          |      |\n\n* Discussion Points\n\n* Action Items\n- [ ] Send course brochure\n- [ ] Prepare quotation\n- [ ] Schedule next meeting\n\n* Next Steps\n- [ ] \n"
-           :if-new (file+head "inlingua/${title}.org"
-                              "#+title: ${title}\n#+date: %U\n#+filetags: :inlingua:meeting:\n#+business: inlingua\n\n")
+          ;; --- HRR (calls/viewings go under the lead file, not new nodes) ---
+          ("h" "HRR Lead" plain
+           "* Contact\n:PROPERTIES:\n:PHONE:\n:SOURCE:\n:PRIORITY: Warm\n:STATUS: New\n:NEXT:\n:END:\n\n* Requirements\n- Budget: ₹\n- Looking for:\n- Config:\n- Locality:\n\n* Interaction Log\n** %U\n%?\n\n* Viewings\n"
+           :if-new (file+head "hrr/clients/${title}.org"
+                              "#+title: ${title}\n#+date: %U\n#+filetags: :hrr:client:\n\n")
+           :unnarrowed t
+           :empty-lines 1)
+          ("r" "HRR Property" plain
+           "* Specs\n:PROPERTIES:\n:LOCALITY:\n:CONFIG:\n:SQFT:\n:PRICE: ₹\n:STATUS: Active\n:OWNER:\n:OWNER_PHONE:\n:END:\n\n* Highlights\n- %?\n\n* Notes\n"
+           :if-new (file+head "hrr/properties/${title}.org"
+                              "#+title: ${title}\n#+date: %U\n#+filetags: :hrr:property:\n\n")
+           :unnarrowed t)
+          ("o" "HRR Deal" plain
+           "* Offer\n:PROPERTIES:\n:CLIENT:\n:PROPERTY:\n:OFFERED: ₹\n:STATUS: Draft\n:DATE: %U\n:END:\n\n* Negotiation\n- Counter: ₹\n- Terms:\n\n* Documents Pending\n- [ ] \n\n* Next Steps\n- %?\n"
+           :if-new (file+head "hrr/deals/${title}.org"
+                              "#+title: ${title}\n#+date: %U\n#+filetags: :hrr:deal:\n\n")
            :unnarrowed t)))
+  ) ; end use-package! org-roam
 
-
-  (setq org-roam-completion-everywhere t))
-
-;; ============================================================
-;; ORG-ROAM-UI
-;; ============================================================
 (use-package! org-roam-ui
   :commands (org-roam-ui-mode org-roam-ui-open)
   :after org-roam
@@ -819,6 +761,16 @@ We set the visual line wrapping and relative line numbers (then we can just go u
         org-roam-ui-follow t
         org-roam-ui-update-on-save t
         org-roam-ui-open-on-start nil))
+
+;; One menu only. SPC n a is agenda — do not bind over it.
+(map! :leader
+      (:prefix ("H" . "roam capture")
+       :desc "Lead (HRR)"     "l" (cmd! (org-roam-capture nil "h"))
+       :desc "Property (HRR)" "p" (cmd! (org-roam-capture nil "r"))
+       :desc "Deal (HRR)"     "d" (cmd! (org-roam-capture nil "o"))
+       :desc "Hate entry"     "a" (cmd! (org-roam-capture nil "a"))
+       :desc "Find node"      "f" #'org-roam-node-find
+       :desc "Insert link"    "i" #'org-roam-node-insert))
 #+end_src
 
 #+RESULTS:

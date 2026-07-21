@@ -105,6 +105,7 @@ let
     gamescope
     lynx
     opencode
+    upiano
   ];
 
 in

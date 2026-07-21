@@ -32,8 +32,15 @@
       borg_logs = "journalctl -u borgbackup-job-${hostName}-home";
       port_forward = "while true ; do date ; natpmpc -a 1 0 udp 60 -g 10.2.0.1 && natpmpc -a 1 0 tcp 60 -g 10.2.0.1 || { echo -e 'ERROR with natpmpc command \a' ; break ; } ; sleep 45 ; done";
 
-      nre = "nh os switch .#prometheus";
-      re = "sudo nixos-rebuild switch --flake .#prometheus";
+      # rebuild the machine you're currently on
+      nre = "nh os switch .#${hostName}";
+      re = "sudo nixos-rebuild switch --flake .#${hostName}";
+
+      # optional: still rebuild a *specific* other host by name
+      re-prometheus = "sudo nixos-rebuild switch --flake .#prometheus";
+      re-karuppu = "sudo nixos-rebuild switch --flake .#karuppu";
+      re-mactheus = "sudo nixos-rebuild switch --flake .#mactheus";
+
       ke = "sudo nixos-rebuild switch --flake .#karuppu";
       ae = "sudo nixos-rebuild switch --flake .#mactheus";
 
