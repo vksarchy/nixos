@@ -110,6 +110,24 @@
     executable = true;
   };
 
+  # Android USB file transfer helpers (see modules/android-transfer.nix)
+  home.file.".local/bin/phone-mount" = {
+    source = ../scripts/phone-mount;
+    executable = true;
+  };
+  home.file.".local/bin/phone-umount" = {
+    source = ../scripts/phone-umount;
+    executable = true;
+  };
+  home.file.".local/bin/phone-pull" = {
+    source = ../scripts/phone-pull;
+    executable = true;
+  };
+  home.file.".local/bin/phone-status" = {
+    source = ../scripts/phone-status;
+    executable = true;
+  };
+
   dconf.settings = {
     "org/virt-manager/virt-manager/connections" = {
       autoconnect = [ "qemu:///system" ];

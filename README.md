@@ -1,63 +1,115 @@
-# My NixOS configurations v3
+# My NixOS configurations
 
-This is a pretty significant overhaul of the structure the repo used previously, and should allow for more flexibility and easier modification. About 20 directories and 40 files were removed.
+Personal flake-based NixOS + Home Manager setup. Workstations only for now — modular, hostname-scoped builds, Niri + Noctalia by default.
 
-The flake builds no longer depend on hostname-profile (e.g. `erebos-niri`, `prometheus-hypr`, etc) and are now only `.#hostname`. I've converted the "profiles" I used before into modules which can be enabled or disabled as needed. At the time of writing, the Home Manager file for the respective environment will need to be swapped out in `flake.nix`. Make sure you comment or remove any conflicting files from other environments.
+> **Use with caution.** Review files before applying. Hostnames, usernames, mounts, secrets, and hardware paths are specific to my machines. Modules exist so you can turn pieces off or fork more easily.
 
-I previously got a little over-ambitious in the past and pushed a structure for servers, I have since removed that structure (the bulk of the directories and files that were removed) and instead am slowly migrating services to NixOS servers. If you would like to take a look at how I have configured those, relevant files are `/flake.nix`, `/modules/baseline.server.nix`, `/home/server.nix`, and `/devices/server/*`. 
+## Table of contents
 
-Though I've learned a lot about NixOS since I started daily driving it in 2025, this configuration should be used with caution. You should review all files for anything that may conflict with what you are looking for out of your build. You may need to adjust occurrences of things specific to my environment, like hostnames, usernames, filesystem mounts, etc. Part of the reason I broke things up into modules is to make that process easier.
-
-## Table of Contents
 - [Repo structure](#repo-structure)
-- [Important things to note](#important-things-to-note)
-- [Current valid build commands](#current-valid-build-commands-from-root-of-repo)
-- [Showcase](#showcase)
-- [Installation](#installation)
+- [Hosts](#hosts)
+- [Important notes](#important-notes)
+- [Build commands](#build-commands)
+- [Cloning / adapting](#cloning--adapting)
 - [Sponsor NixOS](#sponsor-nixos)
-- [Github mirror](#github-mirror)
 
 ## Repo structure
 
-- `/config`: software configuration files (ghostty, fastfetch, niri binds, etc). Pretty much all of these are managed through Home Manager and deployed to `~/.config`.
-- `/devices`: broken into `/desktop`, `/laptop`, and `/server`. This is where device-specific configurations and modules are imported and set, as well as the home for `hardware-configuration.nix`. If you're cloning this repo, don't forget to replace this file with your own.
-- `/home`: Home Manager configurations for my baseline (`common.nix`), DE/WM-specific configurations, etc.
-- `/modules`: this is where the vast majority of the restructuring was done. Review and adjust as needed. Many things are specific to my environment. Overall, the move to modules should make this repo much more flexible for both myself and anyone else who may want to use it.
-- `/pics`: profile pictures and eventually screenshots to include in the README.
+| Path | Purpose |
+|------|---------|
+| `/config` | App configs (ghostty, niri, noctalia, fuzzel, starship, etc.). Mostly wired through Home Manager into `~/.config`. |
+| `/devices` | Per-machine entry points under `/desktop` and `/laptop`. Imports modules, sets host options, holds `hardware-configuration.nix`. **Replace hardware configs if you fork this.** |
+| `/home` | Home Manager: baseline (`common.nix`), shell (`zsh.nix`), WM (`niri.nix`), extras (`steam.nix`). |
+| `/modules` | Feature modules (`baseline`, `niri`, `gaming`, `backup`, …) plus `profiles/workstation.nix` which pulls the common set together. |
+| `/pkgs` | Local package definitions. |
+| `/scripts` | Small helper scripts. |
+| `/secrets` | agenix secrets (encrypted). |
+| `/dotfiles` | Extra dotfiles (e.g. Doom Emacs) not always fully Nix-managed. |
 
-## Important things to note
+## Hosts
 
-- My workstations run on the **unstable** branch, use the **latest kernel**, and **allow unfree software**. My servers run on the **stable** branch, use an **LTS kernel**, and also allow **unfree software**. Garbage collection removes all generations older than 7 days on both workstations and servers.
-- `/modules/baseline.nix` is exactly what it sounds like. Services, kernel and boot parameters, and other core, shared settings are defined here. You should review this file. The baseline is enabled with: ```workstation.baseline.enable = true;```. Most modules are nested within the ```workstation``` option.
-- `/modules/packages.nix` handles all shared packages for workstations. It is broken up into options, being ```tools```, ```dev```, and ```apps```. I have nested the modules options into the ```baseline``` option as I still consider it a part of the baseline, but that file was getting too big and this makes more sense.
-- All builds use **zsh** by default. I have separate **zsh** and **bash** Home Manager files, you can switch the shell to say bash by modifying the shell file Home Manager imports under either machines entry in ```flake.nix```.
-- I use **Niri** almost exclusively. The Niri module uses **Noctalia Shell**. If you don't want to use Noctalia, remove it's input in `flake.nix` and remove the package from Niri's module. If you're using my Niri config from `/config/niri`, remove ```spawn-at-startup "noctalia-shell"``` from the file. The Niri module will be up to date more often than the others. GNOME and XFCE modules should be stable and usable.
-- Hyprland currently lags behind upstream. Breaking changes were made to window-rule syntax in version 0.53, and I have not yet made adjustments to accommodate this. I don't really have any window rules though so it's probably fine. Use niri.
-- KDE and GNOME work great if that's what you like.
-- Display managers change depending on what environment you choose:
-  - Desktop environments use their defaults (GNOME = GDM, KDE = SDDM, XFCE = LightDM)
-  - Window managers use `tuigreet` with autologin
-- The **SteamOS** build is **not** a functional configuration. This was an experiment to create a SteamOS-like environment that boots directly into Gamescope, aiming for a more console-like experience with support for things like Netflix or YouTube as non-Steam games. It does boot into Gamescope with Steam in Big Picture mode (after a delay), but playing games or streaming them from another device does not work.
-- This repo is not 100 MB. Wallpapers used to live here and were removed. The blobs should also be removed from `.git`. ```du -hs``` reports **8.7 MB** at the time of writing.
+Flake outputs are **hostname-only** (no `hostname-profile` combos like `prometheus-hypr`):
 
-## Current valid build commands (from root of repo)
+| Flake attr | Device | Notes |
+|------------|--------|--------|
+| `prometheus` | Laptop | Primary daily driver |
+| `mactheus` | Laptop | Lighter profile (`workstation.profile.full = false`) |
+| `karuppu` | Desktop | Full workstation |
 
-```sudo nixos-rebuild boot --flake .#prometheus``` (laptop build)
+Build shape:
 
-```sudo nixos-rebuild boot --flake .#erebos``` (desktop/gaming build)
+```text
+.#prometheus
+.#mactheus
+.#karuppu
+```
 
-## Showcase
+Each host is assembled via `mkWorkstation` in `flake.nix` (device module + shared Home Manager imports + optional extras).
 
-<video src="https://codeberg.org/sensei/nixos/raw/branch/assets/recording_20260208_103359.mp4" controls width="100%"></video>
+## Important notes
 
-## Installation
+- **Channel / kernel / unfree:** workstations track **nixpkgs unstable**, **latest kernel**, and **allow unfree**. Automatic GC keeps generations **≤ 7 days**.
+- **Baseline:** `/modules/baseline.nix` — boot, networking, users, locale, core services. Enable with `workstation.baseline.enable = true` (on by default via the workstation profile).
+- **Packages:** `/modules/packages.nix` — shared packages under `workstation.baseline.packages` with toggles for `tools`, `dev`, and `apps`.
+- **Profile:** `/modules/profiles/workstation.nix` imports the common module set. Toggle heavy extras with `workstation.profile.full`.
+- **Shell:** **zsh** by default (`home/zsh.nix` in `baseHmImports` in `flake.nix`).
+- **Desktop:** **Niri** + **Noctalia Shell** + **Stylix** (Tokyo Night). Display manager is **ly**, default session `niri`.
+  - Skip Noctalia: drop the `noctalia` input in `flake.nix`, remove its package from `modules/niri.nix`, and clean startup/spawn lines in `/config/niri`.
+- **User:** `sid` — change usernames, home paths, and HM `users.*` if you reuse this.
+- **Secrets:** [agenix](https://github.com/ryantm/agenix). You need matching age keys; encrypted files in `/secrets` will not work as-is on another machine.
+- **Kanata:** keyboard remapping module with layout files under `/modules/kanata`.
+- Older experiments (multi-profile flake attrs, large server tree, wallpaper blobs) are not part of this tree. Repo is small on purpose.
 
-For installation instructions, please see https://codeberg.org/sensei/nixos/wiki/Installation-instructions
+## Build commands
+
+From the repo root:
+
+```bash
+# Laptop (primary)
+sudo nixos-rebuild switch --flake .#prometheus
+
+# Laptop (lighter)
+sudo nixos-rebuild switch --flake .#mactheus
+
+# Desktop
+sudo nixos-rebuild switch --flake .#karuppu
+
+# Next-boot only (safer when testing)
+sudo nixos-rebuild boot --flake .#prometheus
+```
+
+Dry-run / build without activating:
+
+```bash
+nixos-rebuild build --flake .#prometheus
+nix build .#nixosConfigurations.prometheus.config.system.build.toplevel
+```
+
+## Cloning / adapting
+
+1. Clone the repo and enter it.
+2. Replace `devices/<type>/<host>/hardware-configuration.nix` with your own (`nixos-generate-config`).
+3. Rename host attrs in `flake.nix` and `networking.hostName` in the device module.
+4. Change `users.users.sid` / Home Manager `users.sid` if needed.
+5. Disable modules you do not want via the device file (`workstation.<module>.enable = false` or `profile.full = false`).
+6. Set up agenix (or strip secret references) before rebuild.
+7. Rebuild with `sudo nixos-rebuild switch --flake .#<your-host>`.
+
+Most knobs live under the `workstation` option namespace so device files stay short.
+
+## Module map (high level)
+
+| Area | Modules |
+|------|---------|
+| Core | `baseline`, `packages`, `polkit`, `ssh`, `backup` |
+| Desktop | `niri`, `kanata` |
+| Editors / tools | `nixvim`, `emacs`, `yazi`, `tmux`, `zennotes`, `stt` |
+| Apps | `browser`, `comms`, `media`, `office`, `creative`, `books`, `localsend` |
+| Heavy | `gaming`, `virtualization`, `torrent`, `ai`, `hermes`, `surfshark`, `flatpak` |
+
+Enable/disable from the device `default.nix` rather than editing every module.
 
 ## Sponsor NixOS
 
-Please consider sponsoring NixOS to support the people that this possible https://github.com/sponsors/NixOS
-
-## GitHub mirror
-
-For the GitHub only folks, you can find the mirror here https://github.com/epic9491/nixos
+If this ecosystem is useful to you, consider sponsoring NixOS:  
+https://github.com/sponsors/NixOS

@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# High-speed pull from Android over USB via ADB (usually beats FUSE MTP for bulk).
+# Requires: Developer options → USB debugging ON, authorize this computer once.
+#
+# Usage:
+#   phone-pull                          # list device + common paths
+#   phone-pull /sdcard/DCIM             # → ./DCIM
+#   phone-pull /sdcard/DCIM ~/Pictures  # → ~/Pictures/DCIM (or as given)
+#   phone-pull /sdcard/Download/a.zip .
+set -euo pipefail
+
+if ! command -v adb &>/dev/null; then
+  echo "adb not found (android-tools). Rebuild with workstation.androidTransfer.enable."
+  exit 1
+fi
+
+# Start server quietly
+adb start-server &>/dev/null || true
+
+state=$(adb get-state 2>/dev/null || echo "none")
+if [ "$state" != "device" ]; then
+  echo "No authorized ADB device (state: $state)."
+  echo "  1. Plug USB cable"
+  echo "  2. Phone: Developer options → USB debugging ON"
+  echo "  3. Accept the RSA prompt on the phone"
+  echo "  4. USB mode can stay File transfer or any mode for ADB"
+  adb devices -l || true
+  exit 1
+fi
+
+if [ $# -eq 0 ]; then
+  echo "Device ready:"
+  adb devices -l
+  echo
+  echo "Common paths (phone storage):"
+  adb shell 'ls -1 /sdcard 2>/dev/null | head -30' || true
+  echo
+  echo "Usage: phone-pull <remote-path> [local-dest]"
+  echo "  phone-pull /sdcard/DCIM ~/Pictures"
+  echo "  phone-pull /sdcard/Download/file.zip ."
+  exit 0
+fi
+
+remote=$1
+dest=${2:-.}
+
+mkdir -p "$dest"
+echo "adb pull: $remote → $dest"
+# adb pull preserves structure; no progress on old adb — just run it
+exec adb pull "$remote" "$dest"

@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+# Pull "Seal Team" (both seasons) from connected Android phone → laptop.
+set -euo pipefail
+
+export PATH="/run/current-system/sw/bin:$HOME/.local/bin:$PATH"
+
+DEST="${1:-$HOME/Videos/Seal Team}"
+MNT="${PHONE_MNT:-$HOME/mnt/phone}"
+mkdir -p "$DEST" "$MNT"
+
+echo "==> Destination: $DEST"
+
+# Prefer ADB (fastest/most reliable for bulk)
+if command -v adb &>/dev/null; then
+  adb start-server &>/dev/null || true
+  if adb get-state 2>/dev/null | grep -qx device; then
+    echo "==> ADB device online — searching for Seal Team..."
+    # Search common roots (ignore permission noise)
+    mapfile -t hits < <(
+      adb shell 'for r in /sdcard /storage/emulated/0 /sdcard/Download /sdcard/Movies /sdcard/Videos /sdcard/Documents; do
+        find "$r" -maxdepth 4 \( -iname "*seal*team*" -o -iname "*seal team*" \) 2>/dev/null
+      done' 2>/dev/null | tr -d '\r' | sort -u
+    )
+    if [ "${#hits[@]}" -eq 0 ]; then
+      echo "No path matched *seal*team* via adb. Listing /sdcard top-level:"
+      adb shell 'ls -1 /sdcard' 2>/dev/null | tr -d '\r' || true
+      echo "Re-run: phone-pull '<remote-path>' '$DEST'"
+      exit 1
+    fi
+    echo "Found:"
+    printf '  %s\n' "${hits[@]}"
+    for p in "${hits[@]}"; do
+      echo "==> adb pull: $p → $DEST"
+      adb pull "$p" "$DEST/"
+    done
+    echo "==> Done. Contents of $DEST:"
+    du -sh "$DEST"/* 2>/dev/null || ls -la "$DEST"
+    exit 0
+  fi
+fi
+
+echo "==> No ADB — using MTP FUSE mount"
+
+# Stop gvfs MTP monitor so it doesn't steal the device
+systemctl --user stop gvfs-mtp-volume-monitor.service 2>/dev/null || true
+
+if ! findmnt -n "$MNT" &>/dev/null; then
+  # Free mountpoint
+  fusermount -u "$MNT" 2>/dev/null || fusermount3 -u "$MNT" 2>/dev/null || true
+  # Soft-reset phone USB if possible
+  if command -v usbreset &>/dev/null; then
+    usbreset 22d9:2764 2>/dev/null || usbreset "OnePlus" 2>/dev/null || true
+    sleep 2
+  fi
+  echo "Mounting (phone unlocked, USB = File transfer / MTP)..."
+  if ! jmtpfs "$MNT" 2>/tmp/jmtpfs.err; then
+    echo "jmtpfs failed:"
+    cat /tmp/jmtpfs.err 2>/dev/null || true
+    if ! simple-mtpfs "$MNT" 2>/tmp/simple-mtpfs.err; then
+      echo "simple-mtpfs failed:"
+      cat /tmp/simple-mtpfs.err 2>/dev/null || true
+      echo
+      echo "Could not mount. On the phone:"
+      echo "  1. Unlock the screen"
+      echo "  2. Pull down notification → USB → File transfer / MTP"
+      echo "  3. Prefer USB debugging +: adb devices  then re-run this script"
+      exit 1
+    fi
+  fi
+  sleep 1
+fi
+
+echo "==> Mounted. Searching for Seal Team under $MNT ..."
+# Phone internal storage is often under Internal shared storage / sdcard / 0
+mapfile -t hits < <(
+  find "$MNT" -maxdepth 6 \( -iname '*seal*team*' -o -iname '*seal team*' \) 2>/dev/null | head -40
+)
+
+if [ "${#hits[@]}" -eq 0 ]; then
+  echo "No match for *seal*team*. Top-level layout:"
+  find "$MNT" -maxdepth 3 -type d 2>/dev/null | head -60
+  echo
+  echo "If you see the folder path, copy with:"
+  echo "  rsync -aH --info=progress2 'PATH' '$DEST/'"
+  exit 1
+fi
+
+echo "Found:"
+printf '  %s\n' "${hits[@]}"
+
+for p in "${hits[@]}"; do
+  base=$(basename "$p")
+  echo "==> Copying: $p → $DEST/$base"
+  # rsync is better for resume; fall back to cp -a
+  if command -v rsync &>/dev/null; then
+    rsync -aH --info=progress2 "$p" "$DEST/"
+  else
+    cp -a "$p" "$DEST/"
+  fi
+done
+
+echo "==> Unmounting phone..."
+fusermount -u "$MNT" 2>/dev/null || fusermount3 -u "$MNT" 2>/dev/null || true
+
+echo "==> Done."
+du -sh "$DEST" 2>/dev/null
+du -sh "$DEST"/* 2>/dev/null || ls -la "$DEST"
+echo "Files are in: $DEST"

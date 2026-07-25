@@ -199,11 +199,12 @@ binds {
     // Mod+S { spawn "/run/current-system/sw/bin/signal-desktop"; }
     Alt+B { spawn-sh "/run/current-system/sw/bin/calibre"; }
     Mod+N { spawn-sh "ghostty -e nvim"; }
+    Alt+Shift+N { spawn-sh "ghostty -e nvim"; }
     Alt+D hotkey-overlay-title="Emacs frame" { spawn-sh "emacsclient -c -a ''"; }
     // Mod+M { spawn "/run/current-system/sw/bin/feishin"; }
        Mod+Space { spawn-sh "noctalia msg settings-toggle"; }
     Mod+Shift+B { spawn-sh "ghostty -e btop"; }
-    Alt+W {spawn "/home/sid/.local/bin/webapp" "whatsapp" "https://web.whatsapp.com";}
+    Alt+Q {spawn "/home/sid/.local/bin/webapp" "whatsapp" "https://web.whatsapp.com";}
     Alt+C {spawn "/home/sid/.local/bin/webapp" "calendar" "https://calendar.google.com/calendar/u/0/r";}
     Alt+H {spawn "/home/sid/.local/bin/webapp" "maps" "https://www.google.com/maps/@13.0587952,80.2349081,17z?entry=ttu&g_ep=EgoyMDI2MDYyNC4wIKXMDSoASAFQAw%3D%3D";}
     Alt+Y {spawn "/home/sid/.local/bin/webapp" "Youtube-Music" "https://music.youtube.com/";}
@@ -228,7 +229,7 @@ binds {
 
     Alt+O repeat=false { toggle-overview; }
 
-    Alt+Q repeat=false { close-window; }
+    Alt+W repeat=false { close-window; }
 
     Alt+Left  { focus-column-left; }
     Alt+Down  { focus-window-down; }

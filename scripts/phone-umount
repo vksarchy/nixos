@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Cleanly unmount Android MTP FUSE mount before unplugging the cable.
+set -euo pipefail
+
+MNT="${PHONE_MNT:-$HOME/mnt/phone}"
+
+if ! findmnt -n "$MNT" &>/dev/null; then
+  # Try fusermount anyway in case findmnt misses a sticky FUSE
+  if fusermount -u "$MNT" 2>/dev/null || fusermount3 -u "$MNT" 2>/dev/null; then
+    echo "Unmounted $MNT"
+    exit 0
+  fi
+  echo "Nothing mounted at $MNT"
+  exit 0
+fi
+
+if fusermount -u "$MNT" 2>/dev/null || fusermount3 -u "$MNT" 2>/dev/null || umount "$MNT" 2>/dev/null; then
+  echo "Unmounted $MNT — safe to unplug"
+  exit 0
+fi
+
+echo "Unmount failed. Close yazi/file managers using $MNT, then retry."
+echo "Last resort: fusermount -uz $MNT"
+exit 1

@@ -26,6 +26,11 @@
       battery-health = "upower -i /org/freedesktop/UPower/devices/battery_BAT0";
       lh = "lazyssh";
       ya = "yazi";
+      # Android USB: mount MTP → yazi; bulk pull via ADB
+      pm = "phone-mount";
+      pu = "phone-umount";
+      pp = "phone-pull";
+      psphone = "phone-status";
       lg = "lazygit";
       nf = "nvim $(fzf --preview 'cat {}')";
       borg_backup = "systemctl restart borgbackup-job-${hostName}-home";

@@ -40,7 +40,7 @@ Every feature = module with workstation.<name>.enable. Profile (modules/profiles
 
 Then one block in flake.nix:
 
-spudnik = mkWorkstation { deviceModule = ./devices/potat
+spudnik = mkWorkstation { deviceModule = ./devices/potatoe};
 
 That's whole ceremony. Rule: profile = defaults, device  profile for one machine's need.
 
@@ -54,7 +54,7 @@ let
   cfg = config.workstation.foo;
 in
 {
-  options.workstation.foo.enable = lib.mkEnableOption "F
+  options.workstation.foo.enable = lib.mkEnableOption "Foo";
 
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [ pkgs.foo ];

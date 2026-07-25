@@ -717,11 +717,13 @@ Fill drawers/fields later in the file.
            :if-new (file+head "notes/%<%Y%m%d%H%M%S>.org"
                               "#+title: ${title}\n#+date: %U\n#+filetags: :note:\n\n")
            :unnarrowed t)
+          
           ("p" "Person" plain
            "* Who\n\n%?\n\n* Key Ideas\n- \n\n* Works\n- \n"
            :if-new (file+head "people/${title}.org"
                               "#+title: ${title}\n#+date: %U\n#+filetags: :person:\n\n")
            :unnarrowed t)
+          
           ("w" "Writing" plain
            "%?"
            :if-new (file+head "writing/${title}.org"
@@ -734,6 +736,7 @@ Fill drawers/fields later in the file.
            :if-new (file+head "hate/%<%Y%m%d%H%M%S>.org"
                               "#+title: Hate: ${title}\n#+date: %U\n#+filetags: :hate:\n#+intensity:\n\n")
            :unnarrowed t)
+          
           ;; --- HRR (calls/viewings go under the lead file, not new nodes) ---
           ("h" "HRR Lead" plain
            "* Contact\n:PROPERTIES:\n:PHONE:\n:SOURCE:\n:PRIORITY: Warm\n:STATUS: New\n:NEXT:\n:END:\n\n* Requirements\n- Budget: ₹\n- Looking for:\n- Config:\n- Locality:\n\n* Interaction Log\n** %U\n%?\n\n* Viewings\n"
@@ -741,11 +744,13 @@ Fill drawers/fields later in the file.
                               "#+title: ${title}\n#+date: %U\n#+filetags: :hrr:client:\n\n")
            :unnarrowed t
            :empty-lines 1)
+          
           ("r" "HRR Property" plain
            "* Specs\n:PROPERTIES:\n:LOCALITY:\n:CONFIG:\n:SQFT:\n:PRICE: ₹\n:STATUS: Active\n:OWNER:\n:OWNER_PHONE:\n:END:\n\n* Highlights\n- %?\n\n* Notes\n"
            :if-new (file+head "hrr/properties/${title}.org"
                               "#+title: ${title}\n#+date: %U\n#+filetags: :hrr:property:\n\n")
            :unnarrowed t)
+          
           ("o" "HRR Deal" plain
            "* Offer\n:PROPERTIES:\n:CLIENT:\n:PROPERTY:\n:OFFERED: ₹\n:STATUS: Draft\n:DATE: %U\n:END:\n\n* Negotiation\n- Counter: ₹\n- Terms:\n\n* Documents Pending\n- [ ] \n\n* Next Steps\n- %?\n"
            :if-new (file+head "hrr/deals/${title}.org"

@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Mount Android phone over USB MTP at ~/mnt/phone for yazi / cp / rsync.
+set -euo pipefail
+
+MNT="${PHONE_MNT:-$HOME/mnt/phone}"
+mkdir -p "$MNT"
+
+if findmnt -n "$MNT" &>/dev/null; then
+  echo "Already mounted at $MNT"
+  findmnt "$MNT"
+  exit 0
+fi
+
+# Clear a stale empty mountpoint if a previous FUSE died
+if [ -n "$(ls -A "$MNT" 2>/dev/null || true)" ]; then
+  echo "Mount point $MNT is not empty and not a mount — clean it or set PHONE_MNT"
+  exit 1
+fi
+
+echo "Looking for MTP device (set phone USB mode to File transfer / MTP)..."
+if ! timeout 5 mtp-detect 2>&1 | tee /tmp/mtp-detect.log | grep -qiE 'Found [1-9]|raw device'; then
+  echo "No MTP device found."
+  echo "  1. Use a data-capable cable (not charge-only)"
+  echo "  2. Phone notification → USB → File transfer / MTP (not Charging only)"
+  echo "  3. Unlock the phone screen"
+  if command -v adb &>/dev/null && adb get-state 2>/dev/null | grep -qx device; then
+    echo
+    echo "ADB device is online — for bulk copy use: phone-pull <remote> [local]"
+  fi
+  exit 1
+fi
+
+try_mount() {
+  local bin=$1
+  shift
+  if ! command -v "$bin" &>/dev/null; then
+    return 1
+  fi
+  echo "Trying $bin..."
+  if "$@" "$MNT"; then
+    # Give FUSE a moment to populate
+    sleep 0.4
+    if findmnt -n "$MNT" &>/dev/null || [ -n "$(ls -A "$MNT" 2>/dev/null || true)" ]; then
+      echo "Mounted with $bin → $MNT"
+      echo "Open with: yazi $MNT   |   Unmount: phone-umount"
+      return 0
+    fi
+  fi
+  return 1
+}
+
+# jmtpfs / simple-mtpfs take mountpoint as last arg
+# go-mtpfs is the same; android-file-transfer provides aft-mtp-mount
+if try_mount jmtpfs jmtpfs; then exit 0; fi
+if try_mount simple-mtpfs simple-mtpfs; then exit 0; fi
+if try_mount go-mtpfs go-mtpfs; then exit 0; fi
+if try_mount aft-mtp-mount aft-mtp-mount; then exit 0; fi
+
+echo "All MTP mounters failed. GUI fallback: android-file-transfer"
+echo "Or enable USB debugging and use: phone-pull /sdcard/DCIM ."
+exit 1

@@ -4,8 +4,10 @@
 ;; Simplified version that uses the existing Emacs frame
 
 ;;; Code:
+;; Do not call (recentf-mode 1) here — Doom manages recentf, and enabling it
+;; reloads recentf-save-file. A corrupted save file (e.g. setq with 3 args)
+;; would abort this whole module during doom startup.
 (require 'recentf)
-(recentf-mode 1)
 (require 'all-the-icons)
 (require 'json)
 (require 'url-util)
@@ -162,7 +164,7 @@
                                          filename
                                          (propertize (abbreviate-file-name directory) 'face 'font-lock-comment-face))
                                  (list 'file file))))
-                       recentf-list))
+                       (bound-and-true-p recentf-list)))
              category-handlers)
 
     (puthash 'app

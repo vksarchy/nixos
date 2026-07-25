@@ -27,6 +27,7 @@ in
     ../zennotes.nix
     ../emacs/system.nix
     ../localsend.nix
+    ../android-transfer.nix
     ../stt.nix
     # Gaming & Graphics
     ../gaming.nix
@@ -83,6 +84,7 @@ in
       zennotes.enable = lib.mkDefault true;
       emacs.enable = lib.mkDefault true;
       localsend.enable = lib.mkDefault true;
+      androidTransfer.enable = lib.mkDefault true;
       stt.enable = lib.mkDefault true;
       polkit.enable = lib.mkDefault true;
       ssh.enable = lib.mkDefault true;

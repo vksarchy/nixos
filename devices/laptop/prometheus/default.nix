@@ -54,10 +54,12 @@
         enable = true;
         # BorgBase repo — URL from borgbase.com repo page
         repo = "ssh://q93e746c@q93e746c.repo.borgbase.com/./repo";
+        # Books only
         paths = [ "/home/sid/Downloads/Epubs" ];
         exclude = [ ];
         passFile = ../../../secrets/borg.borgbase.age;
-        startAt = "daily";
+        # Midday + Persistent (module default) — better for a laptop than midnight
+        startAt = "*-*-* 12:00:00";
       };
 
       surfshark = {

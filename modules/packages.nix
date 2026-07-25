@@ -56,12 +56,9 @@ let
     cmatrix
     bat
     rclone
-    gvfs
-    jmtpfs
-    libmtp
+    # Android USB/MTP tools live in modules/android-transfer.nix
     lsof
     psmisc
-    simple-mtpfs
     comma
     nh
     direnv
@@ -106,6 +103,17 @@ let
     lynx
     opencode
     upiano
+    zoom-us
+    reddit-tui
+    figma-linux
+    thunderbird
+    superfile
+    speedread
+    epy
+    lynis
+    shell-gpt
+    freetube
+    shellcheck
   ];
 
 in

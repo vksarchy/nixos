@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Quick diagnostics for Android USB transfer readiness.
+set -euo pipefail
+
+MNT="${PHONE_MNT:-$HOME/mnt/phone}"
+
+echo "=== USB devices ==="
+lsusb 2>/dev/null || echo "(lsusb missing)"
+
+echo
+echo "=== MTP (libmtp) ==="
+if command -v mtp-detect &>/dev/null; then
+  timeout 5 mtp-detect 2>&1 | head -40 || echo "(mtp-detect timed out / no device)"
+else
+  echo "mtp-detect not installed"
+fi
+
+echo
+echo "=== Mount ==="
+if findmnt -n "$MNT" &>/dev/null; then
+  findmnt "$MNT"
+  echo "Contents:"
+  ls -la "$MNT" | head -20
+else
+  echo "Not mounted at $MNT"
+fi
+
+echo
+echo "=== ADB ==="
+if command -v adb &>/dev/null; then
+  adb start-server &>/dev/null || true
+  adb devices -l
+else
+  echo "adb not installed"
+fi
+
+echo
+echo "Tools: $(command -v jmtpfs simple-mtpfs go-mtpfs aft-mtp-mount adb android-file-transfer 2>/dev/null | tr '\n' ' ')"
