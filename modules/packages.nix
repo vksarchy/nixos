@@ -56,6 +56,7 @@ let
     cmatrix
     bat
     rclone
+    ocamlPackages.google-drive-ocamlfuse
     # Android USB/MTP tools live in modules/android-transfer.nix
     lsof
     psmisc
@@ -113,6 +114,7 @@ let
     lynis
     shell-gpt
     freetube
+    spotify
     shellcheck
   ];
 

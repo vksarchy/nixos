@@ -48,6 +48,11 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
+    greyline = {
+      url = "github:cothinking-dev/greyline";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
     flatpaks.url = "github:in-a-dil-emma/declarative-flatpak/latest";
   };
 
@@ -75,6 +80,7 @@
         ./home/zsh.nix
         ./home/niri.nix
         ./home/steam.nix
+        ./home/greyline.nix
         ./modules/emacs/hm.nix
       ];
 

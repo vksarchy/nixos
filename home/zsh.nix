@@ -60,6 +60,10 @@
       running = "systemctl --type=service --state=running";
       failed = "systemctl --failed";
 
+      # Corne v4: USB freeze diagnostics (error -71 / disconnects)
+      corne-watch = "journalctl -kf --no-hostname | rg -i --line-buffered 'usb 1-1|foostan|Corne|error -71|device descriptor|device not accept'";
+      corne-log = "journalctl -b --no-pager --no-hostname | rg -i 'usb 1-1:.*(disconnect|reset|error|not respond)|foostan Corne'";
+
     };
     initContent = lib.mkMerge [
       (lib.mkOrder 100 ''
@@ -94,6 +98,28 @@
       (lib.mkOrder 1000 ''
         export EZA_CONFIG_DIR="$HOME/.config/eza"
         export EZA_ICONS_AUTO=1
+
+        # Corne v4 USB power / presence check
+        corne-status() {
+          echo "=== lsusb ==="
+          lsusb | rg -i 'corne|4653' || echo "(not present)"
+          echo "=== power ==="
+          local found=0
+          for d in /sys/bus/usb/devices/*; do
+            [ -f "$d/idVendor" ] || continue
+            [ "$(cat "$d/idVendor" 2>/dev/null)" = "4653" ] || continue
+            found=1
+            printf '%s product=%s control=%s autosuspend=%s runtime=%s\n' \
+              "$d" \
+              "$(cat "$d/product" 2>/dev/null)" \
+              "$(cat "$d/power/control" 2>/dev/null)" \
+              "$(cat "$d/power/autosuspend" 2>/dev/null)" \
+              "$(cat "$d/power/runtime_status" 2>/dev/null)"
+          done
+          [ "$found" -eq 1 ] || echo "(no sysfs node for 4653)"
+          echo "=== kanata ==="
+          systemctl is-active kanata-main 2>/dev/null || true
+        }
       '')
       (lib.mkOrder 1500 ''
         eval "$(${pkgs.starship}/bin/starship init zsh)"

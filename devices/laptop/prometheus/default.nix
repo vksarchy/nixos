@@ -24,6 +24,15 @@
     hardware.cpu.amd.updateMicrocode = true;
     hardware.keyboard.qmk.enable = true;
 
+    # Corne v4 (foostan / Vial): keep USB fully powered.
+    # Logs show repeated error -71 / disconnects; autosuspend and brownouts make freezes worse.
+    services.udev.extraRules = ''
+      # foostan Corne v4 — disable USB autosuspend
+      ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="4653", ATTR{idProduct}=="0004", TEST=="power/control", ATTR{power/control}="on"
+      ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="4653", ATTR{idProduct}=="0004", TEST=="power/autosuspend", ATTR{power/autosuspend}="-1"
+      ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="4653", ATTR{idProduct}=="0004", TEST=="power/wakeup", ATTR{power/wakeup}="enabled"
+    '';
+
     # Local Ollama for STT cleanup (see modules/stt.nix). CPU is plenty for a 3B
     # model on short dictation. For AMD GPU accel set acceleration = "rocm"
     # (may need HSA_OVERRIDE_GFX_VERSION for this APU).

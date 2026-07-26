@@ -41,23 +41,23 @@
   
 
 (deflayer nav 
-  XX    C-S-tab    C-tab   XX     XX   XX    XX    C-S-tab    C-tab  XX
+  XX    C-S-tab    C-tab   XX     XX   XX    XX   volu  voldwn  XX
   A-t    XX    XX  XX   XX   left   down   up    right  XX
-  XX    XX    XX   XX     XX     XX    XX   XX   XX    XX
-  XX    XX    XX   M-tab  lmet   A-tab
+  XX    XX    XX   XX     XX     XX    home  pgdn    pgup   end
+  XX    XX    XX   M-tab  lmet   XX
 )
 
 (deflayer sym
   S-1  S-2  S-3  S-4  S-5  S-6   S-7   S-8     S-9     S-0
   tab   `      [     ]  S-\  S-'   =     -    +   '
   /    S-`    S-[   S-]  ;  \    S--   S-;  S-.  S-/   
-  XX A-spc A-C-ret  XX  XX  XX
+  A-tab A-spc A-C-ret  XX  XX  XX
 ) 
 
 (deflayer num
-  XX   XX    XX    XX    XX     XX    1  2   3     bspc
+  XX   XX    XX    XX    XX     XX    7  8   9     bspc
   XX   XX    XX    XX    XX     .     4  5   6     0
-  XX   XX    XX    XX    XX     XX    7  8   9     XX
+  XX   XX    XX    XX    XX     XX    1  2   3     XX
   XX XX XX XX XX XX
 )
 
