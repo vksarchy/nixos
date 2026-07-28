@@ -116,6 +116,8 @@ let
     freetube
     spotify
     shellcheck
+    cryptomator
+
   ];
 
 in

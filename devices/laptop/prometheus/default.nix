@@ -84,7 +84,7 @@
       };
 
       hermes = {
-        model = "deepseek/deepseek-v4-flash";
+        model = "deepseek/deepseek-v4-pro";
         customProviders = [
           {
             name = "Grok";

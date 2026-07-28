@@ -41,9 +41,9 @@
   
 
 (deflayer nav 
-  XX    C-S-tab    C-tab   XX     XX   XX    XX   volu  voldwn  XX
+  XX    C-S-tab    C-tab   XX     XX   XX    XX  voldwn  volu  XX
   A-t    XX    XX  XX   XX   left   down   up    right  XX
-  XX    XX    XX   XX     XX     XX    home  pgdn    pgup   end
+  XX    XX    XX   XX     XX     XX    home  pgup  pgdn end
   XX    XX    XX   M-tab  lmet   XX
 )
 
