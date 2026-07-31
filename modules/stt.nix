@@ -50,19 +50,51 @@ let
     WAVFILE="''${XDG_RUNTIME_DIR:-/tmp}/stt-recording.wav"
     MODEL="${modelFile}"
     THREADS=$(nproc)
+    WPCTL=${pkgs.wireplumber}/bin/wpctl
+
+    # PipeWire often leaves the laptop digital mic muted (or remutes after
+    # suspend / profile switches). Unmute every time so recording isn't silent.
+    unmute_mic() {
+      "$WPCTL" set-mute @DEFAULT_AUDIO_SOURCE@ 0 2>/dev/null || true
+      "$WPCTL" set-volume @DEFAULT_AUDIO_SOURCE@ 1.0 2>/dev/null || true
+      # Also hit any node literally named "Digital Microphone" (first match only)
+      ID=$("$WPCTL" status 2>/dev/null | \
+        ${pkgs.gnugrep}/bin/grep -oP '\d+(?=\.\s+.*Digital Microphone)' | head -n1 || true)
+      if [ -n "''${ID:-}" ]; then
+        "$WPCTL" set-mute "$ID" 0 2>/dev/null || true
+        "$WPCTL" set-volume "$ID" 1.0 2>/dev/null || true
+      fi
+    }
+
+    # wait(1) only works for children of this shell; stt-record is a new process
+    # on each keypress, so poll until pw-record exits (or timeout).
+    wait_pid() {
+      local pid="$1" i
+      for i in $(seq 1 100); do
+        kill -0 "$pid" 2>/dev/null || return 0
+        sleep 0.05
+      done
+      kill -KILL "$pid" 2>/dev/null || true
+    }
 
     if [ -f "$PIDFILE" ]; then
       # ── second press: stop recording ──
       PID=$(cat "$PIDFILE")
-      kill "$PID" 2>/dev/null || true
-      wait "$PID" 2>/dev/null || true
       rm -f "$PIDFILE"
+      # SIGINT lets pw-record finalize the WAV header cleanly
+      kill -INT "$PID" 2>/dev/null || kill "$PID" 2>/dev/null || true
+      wait_pid "$PID"
+
+      if [ ! -f "$WAVFILE" ]; then
+        ${pkgs.libnotify}/bin/notify-send "STT" "No recording captured" -t 2000
+        exit 0
+      fi
 
       # Silence check — skip whisper entirely if no real audio
       RMS=$(${pkgs.sox}/bin/sox "$WAVFILE" -n stat 2>&1 | ${pkgs.gawk}/bin/awk '/RMS.*amplitude/ {print $3; exit}')
       if [ -z "''${RMS:-}" ] || [ "$(echo "$RMS < 0.004" | ${pkgs.bc}/bin/bc -l)" = 1 ]; then
         rm -f "$WAVFILE"
-        ${pkgs.libnotify}/bin/notify-send "STT" "No speech detected" -t 2000
+        ${pkgs.libnotify}/bin/notify-send "STT" "No speech detected (mic silent/muted?)" -t 2500
         exit 0
       fi
 
@@ -72,9 +104,13 @@ let
         -l en \
         -t "$THREADS" \
         --no-timestamps \
+        --no-prints \
         --no-speech-thold 0.5 \
-        2>/dev/null) || true
+        2>/dev/null | ${pkgs.gawk}/bin/awk 'NF {print}' | ${pkgs.gnused}/bin/sed 's/^[[:space:]]*//;s/[[:space:]]*$//') || true
       rm -f "$WAVFILE"
+
+      # Collapse accidental multi-line whisper output into one paste block
+      TEXT=$(printf '%s' "''${TEXT:-}" | ${pkgs.gnused}/bin/sed '/^$/d')
 
       if [ -n "''${TEXT:-}" ]; then
 ${lib.optionalString cfg.cleanup ''
@@ -113,19 +149,24 @@ PY
       fi
     else
       # ── first press: start recording ──
-      ${pkgs.pipewire}/bin/pw-record "$WAVFILE" &
+      unmute_mic
+      rm -f "$WAVFILE"
+      ${pkgs.pipewire}/bin/pw-record --target @DEFAULT_AUDIO_SOURCE@ "$WAVFILE" &
       echo $! > "$PIDFILE"
       ${pkgs.libnotify}/bin/notify-send "STT" "Recording... press Alt+T again to stop" -t 2000
     fi
   '';
 
   unmuteScript = pkgs.writeShellScriptBin "stt-unmute-mic" ''
-    # Find digital microphone node by name and unmute it
-    ID=$(${pkgs.wireplumber}/bin/wpctl status 2>&1 | \
-      ${pkgs.gnugrep}/bin/grep -oP '\d+(?=\.\s+.*Digital Microphone)')
+    # Default source first (stable handle even if node ids change)
+    ${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 0 2>/dev/null || true
+    ${pkgs.wireplumber}/bin/wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 1.0 2>/dev/null || true
+    # Named digital mic (PipeWire often ships this muted on laptops)
+    ID=$(${pkgs.wireplumber}/bin/wpctl status 2>/dev/null | \
+      ${pkgs.gnugrep}/bin/grep -oP '\d+(?=\.\s+.*Digital Microphone)' | head -n1 || true)
     if [ -n "''${ID:-}" ]; then
-      ${pkgs.wireplumber}/bin/wpctl set-mute "$ID" 0
-      ${pkgs.wireplumber}/bin/wpctl set-volume "$ID" 1.0
+      ${pkgs.wireplumber}/bin/wpctl set-mute "$ID" 0 2>/dev/null || true
+      ${pkgs.wireplumber}/bin/wpctl set-volume "$ID" 1.0 2>/dev/null || true
     fi
   '';
 
@@ -165,15 +206,24 @@ in
       unmuteScript
     ];
 
-    # Unmute digital microphone on login — PipeWire often ships it muted
+    # Unmute digital microphone on login — PipeWire often ships it muted.
+    # Retry a few times: WirePlumber can re-apply mute shortly after start /
+    # resume before the default source is fully ready.
     systemd.user.services.stt-unmute-mic = {
       description = "Unmute digital microphone for STT";
-      after = [ "wireplumber.service" ];
-      requires = [ "wireplumber.service" ];
+      after = [ "wireplumber.service" "pipewire.service" ];
+      wants = [ "wireplumber.service" ];
       wantedBy = [ "default.target" ];
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = "${unmuteScript}/bin/stt-unmute-mic";
+        # Remain after exit so we can also be triggered on resume if desired
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.writeShellScript "stt-unmute-mic-retry" ''
+          for i in 1 2 3 4 5; do
+            ${unmuteScript}/bin/stt-unmute-mic
+            sleep 2
+          done
+        ''}";
       };
     };
   };
