@@ -71,7 +71,7 @@ layout {
 spawn-at-startup "noctalia"
 spawn-at-startup "emacsclient" "-c" "-a" ""
 // spawn-at-startup "obsidian"
-spawn-at-startup "ghostty" "-e" "btop"
+spawn-at-startup "ghostty" "--window-width=100" "--window-height=30" "-e" "btop"
 spawn-at-startup "systemctl --user start polkit-gnome-authentication-agent-1"
 // swayidle managed via services.swayidle in home/niri.nix (systemd user service with Restart=always)
 // spawn-at-startup "bash" "/home/sid/.config/niri/scripts/smart-auto-hide-bar.sh"
@@ -203,7 +203,7 @@ binds {
     Alt+D hotkey-overlay-title="Emacs frame" { spawn-sh "emacsclient -c -a ''"; }
     // Mod+M { spawn "/run/current-system/sw/bin/feishin"; }
        Mod+Space { spawn-sh "noctalia msg settings-toggle"; }
-    Mod+Shift+B { spawn-sh "ghostty -e btop"; }
+    Mod+Shift+B { spawn-sh "ghostty --window-width=100 --window-height=30 -e btop"; }
     Alt+Q {spawn "/home/sid/.local/bin/webapp" "whatsapp" "https://web.whatsapp.com";}
     Alt+C {spawn "/home/sid/.local/bin/webapp" "calendar" "https://calendar.google.com/calendar/u/0/r";}
     Alt+H {spawn "/home/sid/.local/bin/webapp" "maps" "https://www.google.com/maps/@13.0587952,80.2349081,17z?entry=ttu&g_ep=EgoyMDI2MDYyNC4wIKXMDSoASAFQAw%3D%3D";}

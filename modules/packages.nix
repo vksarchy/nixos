@@ -117,6 +117,7 @@ let
     spotify
     shellcheck
     cryptomator
+    inxi
 
   ];
 

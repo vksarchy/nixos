@@ -167,7 +167,7 @@ binds {
     // Mod+M { spawn "/run/current-system/sw/bin/feishin"; }
        Mod+Space { spawn-sh "noctalia msg settings-toggle"; }
     Alt+U { spawn-sh "ghostty -e yazi"; }
-    Mod+Shift+B { spawn-sh "ghostty -e btop"; }
+    Mod+Shift+B { spawn-sh "ghostty --window-width=100 --window-height=30 -e btop"; }
     Alt+W {spawn "/home/sid/.local/bin/webapp" "whatsapp" "https://web.whatsapp.com";}
     Alt+C {spawn "/home/sid/.local/bin/webapp" "calendar" "https://www.linecal.com/";}
     Alt+Y {spawn "/home/sid/.local/bin/webapp" "youtube-music" "https://music.youtube.com/";}
