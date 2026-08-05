@@ -137,9 +137,21 @@
       };
     };
 
+    # ── Printing: HP over WiFi (CUPS + mDNS discovery) ──
+    services.printing = {
+      enable = true;
+      drivers = [ pkgs.hplip ];
+    };
+    services.avahi = {
+      enable = true;
+      nssmdns4 = true;
+      openFirewall = true;
+    };
+
     # ── Extra system packages ──
     environment.systemPackages = with pkgs; [
       nix.doc
+      system-config-printer
     ];
   };
 }
