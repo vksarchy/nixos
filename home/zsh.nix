@@ -56,6 +56,9 @@
       py = "python3";
       rm = "trash";
 
+      # PDF → Markdown (loads Dev-Projects/pdftomd env via direnv; works from any cwd)
+      pdfmd = "direnv exec $HOME/Dev-Projects/pdftomd pdfmd";
+
       serv = "systemctl --type=service";
       running = "systemctl --type=service --state=running";
       failed = "systemctl --failed";

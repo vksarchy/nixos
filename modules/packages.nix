@@ -86,7 +86,6 @@ let
     safeeyes
     feh
     drawy
-    kdePackages.dolphin
     blanket
     ventoy
     vial
@@ -118,7 +117,7 @@ let
     shellcheck
     cryptomator
     inxi
-
+    wiki-tui
   ];
 
 in

@@ -199,7 +199,6 @@ binds {
     // Mod+S { spawn "/run/current-system/sw/bin/signal-desktop"; }
     Alt+B { spawn-sh "/run/current-system/sw/bin/calibre"; }
     Mod+N { spawn-sh "ghostty -e nvim"; }
-    Alt+Shift+N { spawn-sh "ghostty -e nvim"; }
     Alt+D hotkey-overlay-title="Emacs frame" { spawn-sh "emacsclient -c -a ''"; }
     // Mod+M { spawn "/run/current-system/sw/bin/feishin"; }
        Mod+Space { spawn-sh "noctalia msg settings-toggle"; }
@@ -232,8 +231,6 @@ binds {
     Alt+W repeat=false { close-window; }
 
     Alt+Left  { focus-column-left; }
-    Alt+Down  { focus-window-down; }
-    Alt+Up    { focus-window-up; }
     Alt+Right { focus-column-right; }
     // Mod+H     { focus-column-left; }
     // Mod+J     { focus-window-down; }
@@ -244,8 +241,6 @@ binds {
     Alt+E     { focus-column-right; }
 
     Alt+Ctrl+Left  { move-column-left; }
-    Alt+Ctrl+Down  { move-window-down; }
-    Alt+Ctrl+Up    { move-window-up; }
     Alt+Ctrl+Right { move-column-right; }
     // Mod+Ctrl+H     { move-column-left; }
     // Mod+Ctrl+J     { move-window-down; }
@@ -253,8 +248,8 @@ binds {
     // Mod+Ctrl+L     { move-column-right; }
 
     Alt+Ctrl+N     { move-column-left; }
-    Alt+Ctrl+I     { move-window-down; }
-    Alt+Ctrl+M     { move-window-up; }
+    Alt+Ctrl+I     { move-column-to-workspace-down; }
+    Alt+Ctrl+M     { move-column-to-workspace-up; }
     Alt+Ctrl+E     { move-column-right; }
 
     Mod+Home { focus-column-first; }
@@ -274,8 +269,15 @@ binds {
     // Mod+Shift+U         { move-workspace-down; }
     // Mod+Shift+I         { move-workspace-up; }
 
-    Alt+Shift+I         { move-workspace-down; }
-    Alt+Shift+M         { move-workspace-up; }
+    // Stack focus + reorder — M/I = up/down, same as workspace axis
+    Alt+Ctrl+Shift+M    { focus-window-up; }
+    Alt+Ctrl+Shift+I    { focus-window-down; }
+    Alt+Shift+M         { move-window-up; }
+    Alt+Shift+I         { move-window-down; }
+
+    // Shift (reorder) workspaces
+    Mod+I               { move-workspace-down; }
+    Mod+M               { move-workspace-up; }
 
     Alt+Page_Down      { focus-workspace-down; }
     Alt+Page_Up        { focus-workspace-up; }
@@ -333,8 +335,8 @@ binds {
     // The following binds move the focused window in and out of a column.
     // If the window is alone, they will consume it into the nearby column to the side.
     // If the window is already in a column, they will expel it out.
-    Mod+BracketLeft  { consume-or-expel-window-left; }
-    Mod+BracketRight { consume-or-expel-window-right; }
+    Alt+BracketLeft  { consume-or-expel-window-left; }
+    Alt+BracketRight { consume-or-expel-window-right; }
 
     // Consume one window from the right to the bottom of the focused column.
     Mod+Comma  { consume-window-into-column; }

@@ -72,6 +72,7 @@
     "fuzzel/fuzzel.ini".source = ../config/fuzzel/tokyonight.fuzzel.ini;
     "fastfetch/config.jsonc".source = ../config/fastfetch/main.fastfetch;
     "fastfetch/violet.png".source = ../config/icons/violet.png;
+    "mpv/input.conf".source = ../config/mpv/input.conf;
   };
 
   # home/common.nix or home/niri.nix
