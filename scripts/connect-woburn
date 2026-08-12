@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Connect Marshall Woburn II and make it the default PipeWire sink.
+set -eu
+
+ADDR="${WOBURN_BT_ADDR:-54:B7:E5:83:A0:E2}"
+NAME="WOBURN II"
+TIMEOUT="${WOBURN_CONNECT_TIMEOUT:-25}"
+
+export PATH="/run/current-system/sw/bin:${PATH:-}"
+
+notify() {
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send -t 2500 "Woburn II" "$1" 2>/dev/null || true
+  fi
+  printf '%s\n' "$1"
+}
+
+die() {
+  notify "$1"
+  exit "${2:-1}"
+}
+
+command -v bluetoothctl >/dev/null || die "missing bluetoothctl"
+command -v wpctl >/dev/null || die "missing wpctl"
+
+if ! bluetoothctl show 2>/dev/null | grep -q 'Powered: yes'; then
+  bluetoothctl power on >/dev/null || true
+  sleep 0.5
+fi
+
+is_connected() {
+  bluetoothctl info "$ADDR" 2>/dev/null | grep -q 'Connected: yes'
+}
+
+find_sink_id() {
+  # Print numeric id of the WOBURN II sink, or empty.
+  local block id
+  block="$(wpctl status 2>/dev/null | sed -n '/Sinks:/,/Sources:/p' || true)"
+  id="$(printf '%s\n' "$block" | grep -i "$NAME" | head -n1 | sed -n 's/^[^0-9]*\*\?[[:space:]]*\([0-9][0-9]*\)\..*/\1/p' || true)"
+  printf '%s' "$id"
+}
+
+if ! is_connected; then
+  notify "Connecting to $NAME…"
+  # bluetoothctl prints progress to stdout; keep it quiet but capture failure
+  if ! bluetoothctl connect "$ADDR" 2>/dev/null | grep -q 'Connection successful'; then
+    # Clean half-open state and retry once
+    bluetoothctl disconnect "$ADDR" >/dev/null 2>&1 || true
+    sleep 1.5
+    if ! bluetoothctl connect "$ADDR" 2>/dev/null | grep -q 'Connection successful'; then
+      # Still might be connected (some bluez versions differ on message)
+      if ! is_connected; then
+        die "Connect failed — speaker on, LED steady (not pairing mode)?" 1
+      fi
+    fi
+  fi
+fi
+
+# Wait for A2DP sink node
+sink_id=""
+deadline=$((SECONDS + TIMEOUT))
+while (( SECONDS < deadline )); do
+  if is_connected; then
+    sink_id="$(find_sink_id)"
+    if [[ -n "$sink_id" ]]; then
+      break
+    fi
+  fi
+  sleep 0.4
+done
+
+if [[ -z "$sink_id" ]]; then
+  if is_connected; then
+    die "Linked but no A2DP sink — WirePlumber bluez roles config missing?" 2
+  fi
+  die "Not connected to $NAME" 1
+fi
+
+wpctl set-default "$sink_id" >/dev/null
+wpctl set-mute "$sink_id" 0 >/dev/null 2>&1 || true
+# Refresh Noctalia volume widget/OSD (avoids "no default output" after sink switch)
+if command -v noctalia >/dev/null 2>&1; then
+  noctalia msg volume-osd >/dev/null 2>&1 || true
+fi
+
+codec="$(wpctl inspect "$sink_id" 2>/dev/null | sed -n 's/.*api.bluez5.codec = "\([^"]*\)".*/\1/p' | head -n1 || true)"
+codec="${codec:-unknown}"
+vol="$(wpctl get-volume "$sink_id" 2>/dev/null | awk '{print $2}' || true)"
+
+notify "Default output · codec ${codec} · vol ${vol:-?}"
+exit 0

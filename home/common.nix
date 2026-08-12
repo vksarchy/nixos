@@ -73,6 +73,10 @@
     "fastfetch/config.jsonc".source = ../config/fastfetch/main.fastfetch;
     "fastfetch/violet.png".source = ../config/icons/violet.png;
     "mpv/input.conf".source = ../config/mpv/input.conf;
+    # Marshall Woburn II: only register A2DP Source (send audio). Both roles
+    # cause reverse AVDTP and "a2dp-sink … Device or resource busy".
+    "wireplumber/wireplumber.conf.d/51-woburn-a2dp.conf".source =
+      ../config/wireplumber/51-woburn-a2dp.conf;
   };
 
   # home/common.nix or home/niri.nix
@@ -103,6 +107,16 @@
 
   home.file.".local/bin/toggle-audio-sink" = {
     source = ../scripts/toggle-audio-sink;
+    executable = true;
+  };
+
+  home.file.".local/bin/connect-woburn" = {
+    source = ../scripts/connect-woburn;
+    executable = true;
+  };
+
+  home.file.".local/bin/disconnect-woburn" = {
+    source = ../scripts/disconnect-woburn;
     executable = true;
   };
 

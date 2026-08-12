@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# Disconnect Marshall Woburn II and fall back to laptop speakers.
+set -eu
+
+ADDR="${WOBURN_BT_ADDR:-54:B7:E5:83:A0:E2}"
+NAME="WOBURN II"
+LAPTOP_SINK="${WOBURN_FALLBACK_SINK:-alsa_output.pci-0000_04_00.6.HiFi__Speaker__sink}"
+
+export PATH="/run/current-system/sw/bin:${PATH:-}"
+
+notify() {
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send -t 2500 "Woburn II" "$1" 2>/dev/null || true
+  fi
+  printf '%s\n' "$1"
+}
+
+command -v bluetoothctl >/dev/null || { echo "missing bluetoothctl" >&2; exit 1; }
+command -v wpctl >/dev/null || { echo "missing wpctl" >&2; exit 1; }
+
+if bluetoothctl info "$ADDR" 2>/dev/null | grep -q 'Connected: yes'; then
+  bluetoothctl disconnect "$ADDR" >/dev/null 2>&1 || true
+  # wait for real disconnect (speaker can take a moment)
+  for _ in $(seq 1 25); do
+    bluetoothctl info "$ADDR" 2>/dev/null | grep -q 'Connected: yes' || break
+    sleep 0.2
+  done
+  # if still connected, try once more
+  if bluetoothctl info "$ADDR" 2>/dev/null | grep -q 'Connected: yes'; then
+    bluetoothctl disconnect "$ADDR" >/dev/null 2>&1 || true
+    sleep 1
+  fi
+fi
+
+# Prefer laptop speakers as default (by node name)
+fallback_id=""
+while IFS= read -r line; do
+  id="$(printf '%s\n' "$line" | sed -n 's/^[^0-9]*\*\?[[:space:]]*\([0-9][0-9]*\)\..*/\1/p')"
+  [[ -n "$id" ]] || continue
+  if wpctl inspect "$id" 2>/dev/null | grep -q "node.name = \"${LAPTOP_SINK}\""; then
+    fallback_id="$id"
+    break
+  fi
+done < <(wpctl status 2>/dev/null | sed -n '/Sinks:/,/Sources:/p' || true)
+
+if [[ -n "$fallback_id" ]]; then
+  wpctl set-default "$fallback_id" >/dev/null
+  wpctl set-mute "$fallback_id" 0 >/dev/null 2>&1 || true
+  # Nudge Noctalia so bar/OSD rebind to the new default sink
+  if command -v noctalia >/dev/null 2>&1; then
+    noctalia msg volume-osd >/dev/null 2>&1 || true
+  fi
+  notify "Disconnected · output → Laptop Speakers"
+else
+  # last resort: first non-bluez sink
+  id="$(wpctl status 2>/dev/null | sed -n '/Sinks:/,/Sources:/p' | grep -vi bluez | grep -vi "$NAME" | sed -n 's/^[^0-9]*\*\?[[:space:]]*\([0-9][0-9]*\)\..*/\1/p' | head -n1 || true)"
+  if [[ -n "$id" ]]; then
+    wpctl set-default "$id" >/dev/null
+    if command -v noctalia >/dev/null 2>&1; then
+      noctalia msg volume-osd >/dev/null 2>&1 || true
+    fi
+    notify "Disconnected · output switched to sink $id"
+  else
+    notify "Disconnected from $NAME"
+  fi
+fi
+
+exit 0
