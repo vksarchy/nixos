@@ -28,8 +28,44 @@ if ! bluetoothctl show 2>/dev/null | grep -q 'Powered: yes'; then
   sleep 0.5
 fi
 
-is_connected() {
-  bluetoothctl info "$ADDR" 2>/dev/null | grep -q 'Connected: yes'
+device_info() {
+  bluetoothctl info "$ADDR" 2>/dev/null || true
+}
+
+# Any ACL link (LE or BR/EDR). bluetoothctl reports Connected: yes for LE-only too.
+is_linked() {
+  device_info | grep -q 'Connected: yes'
+}
+
+# A2DP needs classic BR/EDR. LE-only links show Connected: yes but never create a sink.
+is_bredr_connected() {
+  device_info | grep -q 'BREDR.Connected: yes'
+}
+
+prefer_bredr() {
+  # Prefer classic on next connect (needs bluez Device1 PreferredBearer).
+  local path
+  path="/org/bluez/hci0/dev_${ADDR//:/_}"
+  busctl set-property org.bluez "$path" org.bluez.Device1 PreferredBearer s bredr \
+    >/dev/null 2>&1 || true
+}
+
+bt_disconnect() {
+  bluetoothctl disconnect "$ADDR" >/dev/null 2>&1 || true
+  local i
+  for i in $(seq 1 25); do
+    is_linked || return 0
+    sleep 0.2
+  done
+}
+
+bt_connect() {
+  # Returns 0 if linked after attempt (caller still checks BR/EDR + sink).
+  if bluetoothctl connect "$ADDR" 2>/dev/null | grep -q 'Connection successful'; then
+    return 0
+  fi
+  # Some bluez builds differ on the success string; trust state.
+  is_linked
 }
 
 find_sink_id() {
@@ -40,38 +76,96 @@ find_sink_id() {
   printf '%s' "$id"
 }
 
-if ! is_connected; then
-  notify "Connecting to $NAME…"
-  # bluetoothctl prints progress to stdout; keep it quiet but capture failure
-  if ! bluetoothctl connect "$ADDR" 2>/dev/null | grep -q 'Connection successful'; then
-    # Clean half-open state and retry once
-    bluetoothctl disconnect "$ADDR" >/dev/null 2>&1 || true
-    sleep 1.5
-    if ! bluetoothctl connect "$ADDR" 2>/dev/null | grep -q 'Connection successful'; then
-      # Still might be connected (some bluez versions differ on message)
-      if ! is_connected; then
-        die "Connect failed — speaker on, LED steady (not pairing mode)?" 1
+wait_for_sink() {
+  local deadline sink_id
+  deadline=$((SECONDS + TIMEOUT))
+  sink_id=""
+  while (( SECONDS < deadline )); do
+    if is_bredr_connected; then
+      sink_id="$(find_sink_id)"
+      if [[ -n "$sink_id" ]]; then
+        printf '%s' "$sink_id"
+        return 0
       fi
     fi
+    sleep 0.4
+  done
+  printf '%s' "$(find_sink_id)"
+  return 1
+}
+
+ensure_bredr_link() {
+  prefer_bredr
+
+  # Already classic-linked — good.
+  if is_bredr_connected; then
+    return 0
   fi
+
+  # LE-only (or half-open): drop and reconnect so bluez brings up BR/EDR for A2DP.
+  if is_linked; then
+    notify "LE-only link — reconnecting for A2DP…"
+    bt_disconnect
+    sleep 1
+  else
+    notify "Connecting to $NAME…"
+  fi
+
+  if ! bt_connect; then
+    bt_disconnect
+    sleep 1.5
+    bt_connect || true
+  fi
+
+  # Brief wait for BREDR flag after dual-mode connect.
+  local i
+  for i in $(seq 1 20); do
+    is_bredr_connected && return 0
+    sleep 0.25
+  done
+
+  # Still no classic: hard retry once more.
+  if ! is_bredr_connected; then
+    notify "No BR/EDR yet — retrying…"
+    bt_disconnect
+    sleep 1.5
+    prefer_bredr
+    bt_connect || true
+    for i in $(seq 1 20); do
+      is_bredr_connected && return 0
+      sleep 0.25
+    done
+  fi
+
+  is_bredr_connected
+}
+
+ensure_bredr_link || {
+  if is_linked; then
+    die "Linked (LE only) — A2DP needs classic BR/EDR. Power-cycle speaker?" 2
+  fi
+  die "Connect failed — speaker on, LED steady (not pairing mode)?" 1
+}
+
+sink_id="$(wait_for_sink || true)"
+
+# A2DP profile sometimes fails first connect with "Protocol not available"; one
+# more classic reconnect usually brings the PipeWire sink up.
+if [[ -z "$sink_id" ]]; then
+  notify "No A2DP sink yet — reconnecting…"
+  bt_disconnect
+  sleep 1.5
+  prefer_bredr
+  bt_connect || true
+  sink_id="$(wait_for_sink || true)"
 fi
 
-# Wait for A2DP sink node
-sink_id=""
-deadline=$((SECONDS + TIMEOUT))
-while (( SECONDS < deadline )); do
-  if is_connected; then
-    sink_id="$(find_sink_id)"
-    if [[ -n "$sink_id" ]]; then
-      break
-    fi
-  fi
-  sleep 0.4
-done
-
 if [[ -z "$sink_id" ]]; then
-  if is_connected; then
-    die "Linked but no A2DP sink — WirePlumber bluez roles config missing?" 2
+  if is_bredr_connected; then
+    die "BR/EDR up but no A2DP sink — check WirePlumber bluez roles / bluetoothd log" 2
+  fi
+  if is_linked; then
+    die "Linked (LE only) — A2DP needs classic BR/EDR. Power-cycle speaker?" 2
   fi
   die "Not connected to $NAME" 1
 fi

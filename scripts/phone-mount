@@ -49,9 +49,8 @@ try_mount() {
   return 1
 }
 
-# jmtpfs / simple-mtpfs take mountpoint as last arg
-# go-mtpfs is the same; android-file-transfer provides aft-mtp-mount
-if try_mount jmtpfs jmtpfs; then exit 0; fi
+# simple-mtpfs / go-mtpfs take mountpoint as last arg
+# android-file-transfer provides aft-mtp-mount
 if try_mount simple-mtpfs simple-mtpfs; then exit 0; fi
 if try_mount go-mtpfs go-mtpfs; then exit 0; fi
 if try_mount aft-mtp-mount aft-mtp-mount; then exit 0; fi

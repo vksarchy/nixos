@@ -23,7 +23,7 @@ in
 
     environment.systemPackages = with pkgs; [
       # FUSE MTP mounts (try in this order via phone-mount)
-      jmtpfs
+      # (jmtpfs removed from nixpkgs 2026-08 — unmaintained)
       simple-mtpfs
       go-mtpfs
       # CLI detection / low-level MTP tools

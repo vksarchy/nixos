@@ -35,4 +35,4 @@ else
 fi
 
 echo
-echo "Tools: $(command -v jmtpfs simple-mtpfs go-mtpfs aft-mtp-mount adb android-file-transfer 2>/dev/null | tr '\n' ' ')"
+echo "Tools: $(command -v simple-mtpfs go-mtpfs aft-mtp-mount adb android-file-transfer 2>/dev/null | tr '\n' ' ')"

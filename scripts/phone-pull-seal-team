@@ -53,10 +53,7 @@ if ! findmnt -n "$MNT" &>/dev/null; then
     sleep 2
   fi
   echo "Mounting (phone unlocked, USB = File transfer / MTP)..."
-  if ! jmtpfs "$MNT" 2>/tmp/jmtpfs.err; then
-    echo "jmtpfs failed:"
-    cat /tmp/jmtpfs.err 2>/dev/null || true
-    if ! simple-mtpfs "$MNT" 2>/tmp/simple-mtpfs.err; then
+  if ! simple-mtpfs "$MNT" 2>/tmp/simple-mtpfs.err; then
       echo "simple-mtpfs failed:"
       cat /tmp/simple-mtpfs.err 2>/dev/null || true
       echo
