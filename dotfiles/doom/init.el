@@ -151,7 +151,7 @@
        ;;factor
        (ledger +tree-sitter) ; an accounting system in Emacs
        ;;(lua +tree-sitter)  ; one-based indices? one-based indices
-       (markdown +tree-sitter)  ; writing docs for people to ignore
+       (markdown +grip)  ; writing docs for people to ignore
        ;;nim               ; python + lisp at the speed of c
        (nix +tree-sitter +lsp)  ; I hereby declare "nix geht mehr!"
        ;;ocaml             ; an objective camel

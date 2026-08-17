@@ -149,4 +149,41 @@
       uris = [ "qemu:///system" ];
     };
   };
+
+  # Colemak page-turn keys in the Calibre viewer: n = down, e = up
+  # (same mapping as yazi). Merged into viewer-webengine.json so we
+  # don't clobber window geometry / recently-opened state.
+  home.activation.calibreViewerColemakKeys =
+    let
+      script = pkgs.writeText "calibre-viewer-colemak-keys.py" ''
+import json
+from pathlib import Path
+
+path = Path.home() / ".config/calibre/viewer-webengine.json"
+path.parent.mkdir(parents=True, exist_ok=True)
+data = json.loads(path.read_text()) if path.exists() else {}
+sd = data.setdefault("session_data", {})
+ks = sd.setdefault("keyboard_shortcuts", {})
+
+def key(k):
+    return {
+        "key": k,
+        "altKey": False,
+        "ctrlKey": False,
+        "metaKey": False,
+        "shiftKey": False,
+    }
+
+wanted = {
+    "up": [key("ArrowUp"), key("e")],
+    "down": [key("ArrowDown"), key("n")],
+}
+if any(ks.get(name) != binding for name, binding in wanted.items()):
+    ks.update(wanted)
+    path.write_text(json.dumps(data, indent=2) + "\n")
+      '';
+    in
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      ${pkgs.python3}/bin/python3 ${script}
+    '';
 }
