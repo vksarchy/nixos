@@ -47,7 +47,7 @@
     enable = true;
     settings = {
       font_family = "SauceCodePro Nerd Font";
-      font_size = 12;
+      font_size = 14;
       cursor_trail = 3;
       cursor_trail_decay = "0.1 0.4";
       cursor_trail_start_threshold = 2;

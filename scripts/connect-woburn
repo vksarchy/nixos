@@ -28,6 +28,9 @@ if ! bluetoothctl show 2>/dev/null | grep -q 'Powered: yes'; then
   sleep 0.5
 fi
 
+# disconnect-woburn blocks the device so it cannot auto-reconnect.
+bluetoothctl unblock "$ADDR" >/dev/null 2>&1 || true
+
 device_info() {
   bluetoothctl info "$ADDR" 2>/dev/null || true
 }

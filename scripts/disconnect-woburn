@@ -18,16 +18,24 @@ notify() {
 command -v bluetoothctl >/dev/null || { echo "missing bluetoothctl" >&2; exit 1; }
 command -v wpctl >/dev/null || { echo "missing wpctl" >&2; exit 1; }
 
-if bluetoothctl info "$ADDR" 2>/dev/null | grep -q 'Connected: yes'; then
+is_linked() {
+  bluetoothctl info "$ADDR" 2>/dev/null | grep -q 'Connected: yes'
+}
+
+# A plain disconnect is not enough: Woburn II immediately re-initiates, and
+# Trusted + Noctalia bluetoothAutoConnect accept it. Blocking drops the ACL
+# and rejects inbound reconnects until connect-woburn unblocks.
+bluetoothctl block "$ADDR" >/dev/null 2>&1 || true
+
+if is_linked; then
   bluetoothctl disconnect "$ADDR" >/dev/null 2>&1 || true
-  # wait for real disconnect (speaker can take a moment)
   for _ in $(seq 1 25); do
-    bluetoothctl info "$ADDR" 2>/dev/null | grep -q 'Connected: yes' || break
+    is_linked || break
     sleep 0.2
   done
-  # if still connected, try once more
-  if bluetoothctl info "$ADDR" 2>/dev/null | grep -q 'Connected: yes'; then
+  if is_linked; then
     bluetoothctl disconnect "$ADDR" >/dev/null 2>&1 || true
+    bluetoothctl block "$ADDR" >/dev/null 2>&1 || true
     sleep 1
   fi
 fi
