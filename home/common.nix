@@ -43,6 +43,17 @@
     };
   };
 
+  programs.kitty = {
+    enable = true;
+    settings = {
+      font_family = "SauceCodePro Nerd Font";
+      font_size = 12;
+      cursor_trail = 3;
+      cursor_trail_decay = "0.1 0.4";
+      cursor_trail_start_threshold = 2;
+    };
+  };
+
   programs.ssh = {
     enable = true;
     matchBlocks = {
@@ -150,9 +161,9 @@
     };
   };
 
-  # Colemak page-turn keys in the Calibre viewer: n = down, e = up
-  # (same mapping as yazi). Merged into viewer-webengine.json so we
-  # don't clobber window geometry / recently-opened state.
+  # Colemak page-turn keys in the Calibre viewer: n = up, e = down
+  # (same sense as niri Alt+N / Alt+E). Merged into viewer-webengine.json
+  # so we don't clobber window geometry / recently-opened state.
   home.activation.calibreViewerColemakKeys =
     let
       script = pkgs.writeText "calibre-viewer-colemak-keys.py" ''
@@ -175,8 +186,8 @@ def key(k):
     }
 
 wanted = {
-    "up": [key("ArrowUp"), key("e")],
-    "down": [key("ArrowDown"), key("n")],
+    "up": [key("ArrowUp"), key("n")],
+    "down": [key("ArrowDown"), key("e")],
 }
 if any(ks.get(name) != binding for name, binding in wanted.items()):
     ks.update(wanted)

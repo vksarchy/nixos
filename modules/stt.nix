@@ -48,9 +48,41 @@ let
 
     PIDFILE="''${XDG_RUNTIME_DIR:-/tmp}/stt-pid"
     WAVFILE="''${XDG_RUNTIME_DIR:-/tmp}/stt-recording.wav"
+    NOTIFILE="''${XDG_RUNTIME_DIR:-/tmp}/stt-notify-id"
+    GENFILE="''${XDG_RUNTIME_DIR:-/tmp}/stt-notify-gen"
     MODEL="${modelFile}"
     THREADS=$(nproc)
     WPCTL=${pkgs.wireplumber}/bin/wpctl
+
+    # Same replace-id so Recording → Stopped → Transcribed update one bubble.
+    # Noctalia ignores -t (respectExpireTimeout=false) and keeps low-urgency
+    # toasts for 3s, so we CloseNotification ourselves after 1.5s.
+    notify_stt() {
+      local extra=() id gen
+      if [ -f "$NOTIFILE" ]; then
+        id=$(cat "$NOTIFILE" 2>/dev/null || true)
+        [ -n "''${id:-}" ] && extra=(-r "$id")
+      fi
+      gen=$(cat "$GENFILE" 2>/dev/null || true)
+      gen=$(( ''${gen:-0} + 1 ))
+      echo "$gen" > "$GENFILE"
+      ${pkgs.libnotify}/bin/notify-send -p -a STT -u low -t 1500 \
+        -h string:x-canonical-private-synchronous:stt \
+        "''${extra[@]}" "STT" "$1" >"$NOTIFILE" 2>/dev/null || true
+
+      (
+        mygen=$gen
+        nid=$(cat "$NOTIFILE" 2>/dev/null || true)
+        sleep 1.5
+        [ "$(cat "$GENFILE" 2>/dev/null || true)" = "$mygen" ] || exit 0
+        [ -n "''${nid:-}" ] || exit 0
+        ${pkgs.systemd}/bin/busctl --user call \
+          org.freedesktop.Notifications \
+          /org/freedesktop/Notifications \
+          org.freedesktop.Notifications \
+          CloseNotification u "$nid" >/dev/null 2>&1 || true
+      ) &
+    }
 
     # PipeWire often leaves the laptop digital mic muted (or remutes after
     # suspend / profile switches). Unmute every time so recording isn't silent.
@@ -83,10 +115,11 @@ let
       rm -f "$PIDFILE"
       # SIGINT lets pw-record finalize the WAV header cleanly
       kill -INT "$PID" 2>/dev/null || kill "$PID" 2>/dev/null || true
+      notify_stt "Stopped recording"
       wait_pid "$PID"
 
       if [ ! -f "$WAVFILE" ]; then
-        ${pkgs.libnotify}/bin/notify-send "STT" "No recording captured" -t 2000
+        notify_stt "No recording captured"
         exit 0
       fi
 
@@ -94,7 +127,7 @@ let
       RMS=$(${pkgs.sox}/bin/sox "$WAVFILE" -n stat 2>&1 | ${pkgs.gawk}/bin/awk '/RMS.*amplitude/ {print $3; exit}')
       if [ -z "''${RMS:-}" ] || [ "$(echo "$RMS < 0.004" | ${pkgs.bc}/bin/bc -l)" = 1 ]; then
         rm -f "$WAVFILE"
-        ${pkgs.libnotify}/bin/notify-send "STT" "No speech detected (mic silent/muted?)" -t 2500
+        notify_stt "No speech detected (mic silent/muted?)"
         exit 0
       fi
 
@@ -143,9 +176,9 @@ PY
 ''}
         echo "$TEXT" | ${pkgs.wl-clipboard}/bin/wl-copy
         printf '%s' "$TEXT" | ${pkgs.wtype}/bin/wtype -
-        ${pkgs.libnotify}/bin/notify-send "STT" "Transcribed" -t 2000
+        notify_stt "Transcribed"
       else
-        ${pkgs.libnotify}/bin/notify-send "STT" "No speech detected" -t 2000
+        notify_stt "No speech detected"
       fi
     else
       # ── first press: start recording ──
@@ -153,7 +186,7 @@ PY
       rm -f "$WAVFILE"
       ${pkgs.pipewire}/bin/pw-record --target @DEFAULT_AUDIO_SOURCE@ "$WAVFILE" &
       echo $! > "$PIDFILE"
-      ${pkgs.libnotify}/bin/notify-send "STT" "Recording... press Alt+T again to stop" -t 2000
+      notify_stt "Recording... press Alt+T again to stop"
     fi
   '';
 

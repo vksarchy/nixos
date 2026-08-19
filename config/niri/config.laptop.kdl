@@ -24,8 +24,9 @@ output "DP-2" {
     scale 1
 }
 output "HDMI-A-1" {
-    mode "3840x2160@60.000"
-    scale 1.5
+    // Prefer the monitor's native/preferred mode (R27qe is 2560x1440).
+    // Omitting `mode` lets niri pick preferred instead of a hardcoded 4K mode.
+    scale 1
 }
 // /-output "eDP-1" {
 //     // Run `niri msg outputs` while inside a niri instance to list all outputs and their modes.
